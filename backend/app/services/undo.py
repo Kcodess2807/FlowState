@@ -10,10 +10,10 @@ from app.services.reducer import CanvasState
 from app.services.snapshot import reconstruct_state
 
 
+# inverse of an op given the state right before it applied; None means no-op
 def inverse_of(
     op: Operation, state_before: CanvasState
 ) -> tuple[OperationType, dict[str, Any]] | None:
-    """Inverse of an op given the state just before it applied (None = no-op)."""
     shape_id = op.payload.get("shape_id")
     if shape_id is None:
         return None
@@ -69,15 +69,12 @@ async def _user_ops(
     return list((await db.execute(stmt)).scalars().all())
 
 
+# rebuild the user's undo/redo stacks from their op history.
+# linear undo: new content clears redo; undo moves a content op from undo to
+# redo; redo (an undo of an undo) moves it back.
 def _build_stacks(
     ops: list[Operation],
 ) -> tuple[list[Operation], list[Operation]]:
-    """Reconstruct a user's undo/redo stacks from their op history.
-
-    Pure linear undo: a new content op clears the redo stack; an undo moves a
-    content op from the undo stack to the redo stack; a redo (undo of an undo)
-    moves it back.
-    """
     by_id = {op.id: op for op in ops}
     undo_stack: list[Operation] = []
     redo_stack: list[Operation] = []

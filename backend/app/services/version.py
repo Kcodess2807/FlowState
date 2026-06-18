@@ -81,7 +81,7 @@ async def restore_to_version(
         created.append(op)
 
     # create_shape acts as an upsert in the reducer, so it covers both new and
-    # modified shapes — set each to its full target attributes.
+    # modified shapes; set each to its full target attributes.
     to_write = dict(diff["added"])
     to_write.update({sid: ch["after"] for sid, ch in diff["modified"].items()})
     for shape_id, shape in to_write.items():
