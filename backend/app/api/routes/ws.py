@@ -10,7 +10,8 @@ from app.models.workspace import ROLE_ORDER, WorkspaceRole
 from app.realtime.manager import Connection, room_manager
 from app.schemas.operation import OperationRead
 from app.services.canvas import get_canvas
-from app.services.operation import append_operation, list_operations
+from app.services.commit import commit_and_broadcast
+from app.services.operation import list_operations
 from app.services.user import get_user_by_id
 from app.services.workspace import get_membership
 
@@ -190,8 +191,9 @@ async def _handle_operation(connection, canvas_id, membership, message) -> None:
     payload = message.get("payload") or {}
     client_op_id = message.get("client_op_id")
 
+    # append + commit + fan out to everyone (incl. sender, so it learns the version)
     async with AsyncSessionLocal() as db:
-        operation, created = await append_operation(
+        await commit_and_broadcast(
             db,
             canvas_id=canvas_id,
             op_type=op_type,
@@ -199,13 +201,6 @@ async def _handle_operation(connection, canvas_id, membership, message) -> None:
             user_id=connection.user_id,
             client_op_id=client_op_id,
         )
-        await db.commit()
-        op_dict = _op_to_dict(operation)
-
-    # fan out to everyone including the sender so it learns the assigned version
-    await room_manager.broadcast(
-        canvas_id, {"type": "operation", "operation": op_dict}
-    )
 
 
 async def _send_error(websocket: WebSocket, detail: str) -> None:

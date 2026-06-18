@@ -53,6 +53,12 @@ class Operation(UUIDPrimaryKeyMixin, Base):
         nullable=True,
     )
     client_op_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # for undo/redo: the operation this one reverses (NULL for normal content ops)
+    undo_of: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("operations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

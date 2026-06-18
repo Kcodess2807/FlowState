@@ -11,7 +11,7 @@ const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
-const LEVELS = ["#eef2f6", "#99f6e4", "#2dd4bf", "#0d9488", "#115e59"];
+const LEVELS = ["#1b212b", "#173f3b", "#1c6f66", "#23a596", "#2dd4bf"];
 
 function parseDate(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
@@ -93,7 +93,7 @@ export function ContributionHeatmap({
             key={`${m.label}-${i}`}
             x={LEFT + m.x}
             y={11}
-            className="fill-slate-400"
+            className="fill-ink-faint"
             fontSize={10}
           >
             {m.label}
@@ -105,7 +105,7 @@ export function ContributionHeatmap({
               key={label}
               x={0}
               y={TOP + i * STEP + CELL - 2}
-              className="fill-slate-400"
+              className="fill-ink-faint"
               fontSize={10}
             >
               {label}
@@ -135,7 +135,7 @@ export function ContributionHeatmap({
         ))}
       </svg>
 
-      <div className="mt-2 flex items-center justify-end gap-1.5 pr-1 text-xs text-slate-400">
+      <div className="mt-2 flex items-center justify-end gap-1.5 pr-1 text-xs text-ink-faint">
         <span>Less</span>
         {LEVELS.map((c) => (
           <span

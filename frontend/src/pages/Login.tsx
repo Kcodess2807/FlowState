@@ -45,25 +45,25 @@ export default function Login() {
 
   return (
     <DotGrid className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand-50/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-accent/[0.06] to-transparent" />
       <div className="relative w-full max-w-md">
         <div className="mb-6 flex justify-center">
           <Logo />
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lift">
+        <div className="rounded-2xl border border-hairline bg-elevated p-8">
           <div className="text-center">
-            <h1 className="relative inline-block text-xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="relative inline-block text-xl font-extrabold tracking-tight text-ink">
               {mode === "login" ? "Welcome back" : "Create your account"}
               <DoodleUnderline className="-bottom-2" />
             </h1>
-            <p className="mt-4 text-sm text-slate-500">
+            <p className="mt-4 text-sm text-ink-muted">
               System design, practiced and showcased.
             </p>
           </div>
 
           {error && (
-            <div className="mt-6 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm text-rose-700">
+            <div className="mt-6 flex items-start gap-2 rounded-lg border border-rose-400/25 bg-rose-400/10 px-3 py-2.5 text-sm text-rose-300">
               <IconAlertCircle size={18} className="mt-px shrink-0" />
               <span>{error}</span>
             </div>
@@ -120,17 +120,17 @@ export default function Login() {
           </form>
 
           <div className="mt-5 flex items-center gap-3">
-            <span className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs uppercase tracking-wide text-slate-400">
+            <span className="h-px flex-1 bg-hairline" />
+            <span className="text-xs uppercase tracking-wide text-ink-faint">
               or
             </span>
-            <span className="h-px flex-1 bg-slate-200" />
+            <span className="h-px flex-1 bg-hairline" />
           </div>
           <Button variant="outline" size="lg" className="mt-4 w-full" disabled>
             Continue with GitHub (coming soon)
           </Button>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-6 text-center text-sm text-ink-muted">
             {mode === "login" ? "New to FlowState?" : "Already have an account?"}{" "}
             <button
               type="button"
@@ -138,15 +138,15 @@ export default function Login() {
                 setMode(mode === "login" ? "register" : "login");
                 setError(null);
               }}
-              className="font-semibold text-brand-600 hover:text-brand-700"
+              className="font-semibold text-accent hover:text-accent"
             >
               {mode === "login" ? "Create one" : "Sign in"}
             </button>
           </p>
         </div>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
-          <Link to="/" className="hover:text-slate-600">
+        <p className="mt-6 text-center text-sm text-ink-faint">
+          <Link to="/" className="hover:text-ink-muted">
             ← Back to home
           </Link>
         </p>
@@ -164,7 +164,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-slate-700">
+      <span className="mb-1.5 block text-sm font-medium text-ink-muted">
         {label}
       </span>
       {children}

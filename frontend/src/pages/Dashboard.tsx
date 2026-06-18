@@ -62,11 +62,11 @@ export default function Dashboard() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         {/* Greeting */}
         <FadeIn>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-extrabold tracking-tight text-ink">
             Hey <GradientText>{firstName}</GradientText>{" "}
             <span className="inline-block">👋</span>
           </h1>
-          <p className="mt-1 text-slate-500">{todayLong()}</p>
+          <p className="mt-1 text-ink-muted">{todayLong()}</p>
         </FadeIn>
 
         {/* Metrics */}
@@ -75,16 +75,16 @@ export default function Dashboard() {
             {metrics.map((m) => (
               <div
                 key={m.label}
-                className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow"
+                className="flex items-center gap-4 rounded-2xl border border-hairline bg-elevated p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow-sm"
               >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-glow">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-bg shadow-glow-sm">
                   <m.icon size={24} />
                 </span>
                 <div>
-                  <div className="text-2xl font-extrabold text-slate-900">
+                  <div className="text-2xl font-extrabold text-ink">
                     {formatCount(m.value)}
                   </div>
-                  <div className="text-sm text-slate-500">{m.label}</div>
+                  <div className="text-sm text-ink-muted">{m.label}</div>
                 </div>
               </div>
             ))}
@@ -93,10 +93,10 @@ export default function Dashboard() {
 
         {activity && (
           <FadeIn delay={0.08}>
-            <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+            <section className="mt-8 rounded-2xl border border-hairline bg-elevated p-6">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-lg font-bold text-slate-900">Your activity</h2>
-                <p className="text-sm text-slate-500">
+                <h2 className="text-lg font-bold text-ink">Your activity</h2>
+                <p className="text-sm text-ink-muted">
                   {formatCount(activity.total_contributions)} contributions in the
                   last year
                 </p>
@@ -112,19 +112,19 @@ export default function Dashboard() {
         {lastAttempted && (
           <FadeIn delay={0.1}>
             <section className="mt-12">
-              <h2 className="relative inline-block text-lg font-bold text-slate-900">
+              <h2 className="relative inline-block text-lg font-bold text-ink">
                 Continue where you left off
                 <DoodleUnderline className="-bottom-2" />
               </h2>
-              <div className="mt-5 flex flex-col items-start justify-between gap-4 rounded-2xl border border-brand-100 bg-brand-50/50 p-6 sm:flex-row sm:items-center">
+              <div className="mt-5 flex flex-col items-start justify-between gap-4 rounded-2xl border border-accent/25 bg-accent/[0.06] p-6 sm:flex-row sm:items-center">
                 <div>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-ink">
                       {lastAttempted.title}
                     </span>
                     <DifficultyBadge difficulty={lastAttempted.difficulty} />
                   </div>
-                  <p className="mt-1 max-w-xl text-sm text-slate-600">
+                  <p className="mt-1 max-w-xl text-sm text-ink-muted">
                     {lastAttempted.summary}
                   </p>
                 </div>
@@ -142,12 +142,12 @@ export default function Dashboard() {
         {/* Recommended */}
         <section className="mt-12">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-lg font-bold text-ink">
               Recommended Problems
             </h2>
             <Link
               to="/problems"
-              className="text-sm font-semibold text-brand-600 hover:text-brand-700"
+              className="text-sm font-semibold text-accent hover:text-accent"
             >
               View all →
             </Link>
@@ -164,12 +164,12 @@ export default function Dashboard() {
         {/* Community highlights */}
         <section className="mt-12">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-lg font-bold text-ink">
               Community Highlights
             </h2>
             <Link
               to="/explore"
-              className="text-sm font-semibold text-brand-600 hover:text-brand-700"
+              className="text-sm font-semibold text-accent hover:text-accent"
             >
               Explore →
             </Link>

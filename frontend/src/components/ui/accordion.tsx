@@ -19,7 +19,7 @@ export function Accordion({
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <div className={cn("divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white", className)}>
+    <div className={cn("divide-y divide-hairline rounded-xl border border-hairline bg-elevated", className)}>
       {items.map((item) => {
         const open = openId === item.id;
         return (
@@ -27,14 +27,14 @@ export function Accordion({
             <button
               type="button"
               onClick={() => setOpenId(open ? null : item.id)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-slate-800 hover:bg-slate-50"
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-ink hover:bg-white/[0.03]"
             >
               <span>{item.title}</span>
               <IconChevronDown
                 size={18}
                 className={cn(
-                  "shrink-0 text-slate-400 transition-transform duration-200",
-                  open && "rotate-180 text-brand-600",
+                  "shrink-0 text-ink-faint transition-transform duration-200",
+                  open && "rotate-180 text-accent",
                 )}
               />
             </button>
@@ -47,7 +47,7 @@ export function Accordion({
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   className="overflow-hidden"
                 >
-                  <div className="px-4 pb-4 text-sm leading-relaxed text-slate-600">
+                  <div className="px-4 pb-4 text-sm leading-relaxed text-ink-muted">
                     {item.content}
                   </div>
                 </motion.div>

@@ -5,13 +5,13 @@ export function CanvasThumb({ className }: { className?: string }) {
   return (
     <DotGrid
       className={cn(
-        "relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden border-b border-slate-100",
+        "relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden border-b border-hairline",
         className,
       )}
     >
       <svg
         viewBox="0 0 200 120"
-        className="h-3/4 w-3/4 text-slate-300"
+        className="h-3/4 w-3/4 text-ink-faint"
         fill="none"
         aria-hidden="true"
       >

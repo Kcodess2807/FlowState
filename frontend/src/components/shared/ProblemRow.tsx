@@ -8,18 +8,18 @@ import { formatCount } from "@/lib/utils";
 
 export function ProblemRow({ problem }: { problem: Problem }) {
   return (
-    <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-brand-50/40 sm:flex-row sm:items-center sm:gap-4 sm:px-5">
+    <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-white/[0.04] sm:flex-row sm:items-center sm:gap-4 sm:px-5">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-3">
           <Link
             to={`/problems/${problem.slug}`}
-            className="truncate font-semibold text-slate-900 hover:text-brand-700"
+            className="truncate font-semibold text-ink hover:text-accent"
           >
             {problem.title}
           </Link>
           <DifficultyBadge difficulty={problem.difficulty} />
         </div>
-        <p className="mt-1 line-clamp-1 text-sm text-slate-500">
+        <p className="mt-1 line-clamp-1 text-sm text-ink-muted">
           {problem.summary}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -32,7 +32,7 @@ export function ProblemRow({ problem }: { problem: Problem }) {
       </div>
 
       <div className="flex items-center justify-between gap-4 sm:justify-end">
-        <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
+        <span className="inline-flex items-center gap-1.5 text-sm text-ink-faint">
           <IconUsers size={16} />
           {formatCount(problem.solveCount)}
         </span>

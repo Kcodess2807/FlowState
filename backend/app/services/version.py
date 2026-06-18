@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.operation import OperationType
 from app.models.version import CanvasVersion
+from app.services.commit import broadcast_operation
 from app.services.operation import append_operation
 from app.services.reducer import diff_state
 from app.services.snapshot import create_snapshot, reconstruct_state
@@ -67,32 +68,35 @@ async def restore_to_version(
     target, _ = await reconstruct_state(db, canvas_id, at_version=target_version)
     diff = diff_state(current, target)
 
-    ops = 0
+    created = []
 
     for shape_id in diff["removed"]:
-        await append_operation(
+        op, _ = await append_operation(
             db,
             canvas_id=canvas_id,
             op_type=OperationType.delete_shape,
             payload={"shape_id": shape_id},
             user_id=user_id,
         )
-        ops += 1
+        created.append(op)
 
     # create_shape acts as an upsert in the reducer, so it covers both new and
     # modified shapes — set each to its full target attributes.
     to_write = dict(diff["added"])
     to_write.update({sid: ch["after"] for sid, ch in diff["modified"].items()})
     for shape_id, shape in to_write.items():
-        payload = {**shape, "shape_id": shape_id}
-        await append_operation(
+        op, _ = await append_operation(
             db,
             canvas_id=canvas_id,
             op_type=OperationType.create_shape,
-            payload=payload,
+            payload={**shape, "shape_id": shape_id},
             user_id=user_id,
         )
-        ops += 1
+        created.append(op)
+
+    await db.commit()
+    for op in created:
+        await broadcast_operation(canvas_id, op)
 
     _, new_version = await reconstruct_state(db, canvas_id)
-    return new_version, ops
+    return new_version, len(created)

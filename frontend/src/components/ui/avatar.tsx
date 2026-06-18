@@ -18,7 +18,7 @@ export function Avatar({
       width={size}
       height={size}
       className={cn(
-        "rounded-full border border-slate-200 bg-brand-50 object-cover",
+        "rounded-full border border-hairline bg-surface object-cover",
         className,
       )}
       style={{ width: size, height: size }}

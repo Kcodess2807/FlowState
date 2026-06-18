@@ -10,7 +10,7 @@ import { formatCount } from "@/lib/utils";
 
 export function SolutionCard({ solution }: { solution: Solution }) {
   return (
-    <Spotlight className="group h-full overflow-hidden border border-slate-200 bg-white shadow-card">
+    <Spotlight className="group h-full overflow-hidden border border-hairline bg-elevated">
       <div className="relative overflow-hidden rounded-t-2xl">
         <CanvasThumb className="rounded-none" />
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/0 opacity-0 backdrop-blur-[1px] transition-all duration-200 group-hover:bg-slate-900/40 group-hover:opacity-100">
@@ -23,7 +23,7 @@ export function SolutionCard({ solution }: { solution: Solution }) {
       <div className="relative p-4">
         <Link
           to={`/problems/${solution.problemSlug}`}
-          className="line-clamp-1 font-semibold text-slate-900 hover:text-brand-700"
+          className="line-clamp-1 font-semibold text-ink hover:text-accent"
         >
           {solution.problemTitle}
         </Link>
@@ -38,12 +38,12 @@ export function SolutionCard({ solution }: { solution: Solution }) {
               alt={solution.author.displayName}
               size={26}
             />
-            <span className="text-sm text-slate-600 hover:text-slate-900">
+            <span className="text-sm text-ink-muted hover:text-ink">
               {solution.author.displayName}
             </span>
           </Link>
 
-          <div className="flex items-center gap-3 text-sm text-slate-400">
+          <div className="flex items-center gap-3 text-sm text-ink-faint">
             <span className="inline-flex items-center gap-1">
               <IconHeart size={15} className="text-rose-400" />
               {formatCount(solution.likeCount)}

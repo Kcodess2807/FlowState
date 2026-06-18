@@ -45,8 +45,8 @@ export interface Stencil {
 }
 
 export const STENCILS: Stencil[] = [
-  { variant: "client", label: "Client", icon: IconDeviceDesktop, color: "#475569" },
-  { variant: "users", label: "Users", icon: IconUsers, color: "#475569" },
+  { variant: "client", label: "Client", icon: IconDeviceDesktop, color: "#94a3b8"},
+  { variant: "users", label: "Users", icon: IconUsers, color: "#94a3b8"},
   { variant: "apigateway", label: "API Gateway", icon: IconApi, color: "#0d9488" },
   { variant: "loadbalancer", label: "Load Balancer", icon: IconRouter, color: "#0891b2" },
   { variant: "server", label: "Server", icon: IconServer, color: "#0d9488" },

@@ -40,6 +40,7 @@ async def append_operation(
     payload: dict[str, Any],
     user_id: uuid.UUID,
     client_op_id: str | None = None,
+    undo_of: uuid.UUID | None = None,
 ) -> tuple[Operation, bool]:
     # returns (operation, created); created is False when deduped on client_op_id
     if client_op_id is not None:
@@ -57,6 +58,7 @@ async def append_operation(
         payload=payload,
         created_by=user_id,
         client_op_id=client_op_id,
+        undo_of=undo_of,
     )
     db.add(operation)
     await db.flush()

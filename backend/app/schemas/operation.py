@@ -25,3 +25,8 @@ class OperationRead(BaseModel):
     created_by: uuid.UUID | None
     client_op_id: str | None
     created_at: datetime
+
+
+class UndoResult(BaseModel):
+    applied: bool
+    operation: OperationRead | None = None

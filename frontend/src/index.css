@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   html {
@@ -12,42 +12,66 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-700 font-sans antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-bg text-ink font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv11";
   }
 
   ::selection {
-    @apply bg-brand-100 text-brand-800;
+    @apply bg-accent/25 text-ink;
+  }
+
+  /* Hairline-first: default borders are subtle white, never heavy. */
+  * {
+    border-color: rgba(255, 255, 255, 0.08);
   }
 }
 
 @layer components {
   .surface-dots {
     @apply bg-dot-grid bg-dots;
-    background-color: #ffffff;
+    background-color: #12151b;
   }
 
   .surface-lines {
     @apply bg-line-grid bg-lines;
-    background-color: #ffffff;
+  }
+
+  /* Blueprint grid that fades toward the edges. */
+  .blueprint {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(
+      120% 100% at 50% 0%,
+      #000 35%,
+      transparent 85%
+    );
+    mask-image: radial-gradient(120% 100% at 50% 0%, #000 35%, transparent 85%);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-ink via-ink to-accent bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply border border-hairline bg-surface/70 backdrop-blur-xl;
+  }
+
+  /* Mono technical detail treatment. */
+  .mono {
+    @apply font-mono tracking-tight;
+    font-feature-settings: "ss01";
   }
 
   .hover-lift {
     @apply transition-all duration-200 ease-out;
   }
   .hover-lift:hover {
-    @apply -translate-y-0.5 shadow-lift;
+    @apply -translate-y-0.5;
   }
 
-  .text-gradient {
-    @apply bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-400 bg-clip-text text-transparent;
-    background-size: 200% auto;
-  }
-
-  .glass {
-    @apply border border-white/60 bg-white/70 backdrop-blur-xl;
-  }
-
+  /* Cursor spotlight border (used on a few cards). */
   .spotlight {
     position: relative;
     isolation: isolate;
@@ -60,7 +84,7 @@
     padding: 1px;
     background: radial-gradient(
       220px circle at var(--mx, 50%) var(--my, 50%),
-      rgba(13, 148, 136, 0.55),
+      rgba(45, 212, 191, 0.5),
       transparent 60%
     );
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -70,34 +94,33 @@
     transition: opacity 0.25s ease;
     z-index: 1;
   }
-  .spotlight::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: radial-gradient(
-      300px circle at var(--mx, 50%) var(--my, 50%),
-      rgba(34, 211, 238, 0.12),
-      transparent 55%
-    );
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    z-index: 0;
-  }
-  .spotlight:hover::before,
-  .spotlight:hover::after {
+  .spotlight:hover::before {
     opacity: 1;
   }
 }
 
 @layer utilities {
+  /* Film grain overlay. */
   .noise {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   }
+}
 
-  .pause-on-hover:hover {
-    animation-play-state: paused;
-  }
+/* Dark, thin scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -108,17 +131,4 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(203 213 225) transparent;
-}
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background-color: rgb(203 213 225);
-  border-radius: 9999px;
 }

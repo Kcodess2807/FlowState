@@ -729,12 +729,20 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
   const handleDoubleClick = (e: React.MouseEvent) => {
     const p = getPoint(e);
     const hit = hitTest(shapes, p.x, p.y, byId, viewRef.current.scale);
-    if (hit && (hit.type === "text" || hit.type === "component")) {
+    if (
+      hit &&
+      (hit.type === "text" || hit.type === "component" || hit.type === "arrow")
+    ) {
       setSelectedId(hit.id);
-      const pos =
-        hit.type === "component"
-          ? { x: hit.x + 6, y: hit.y + hit.h - 26 }
-          : { x: hit.x, y: hit.y };
+      let pos: { x: number; y: number };
+      if (hit.type === "component") {
+        pos = { x: hit.x + 6, y: hit.y + hit.h - 26 };
+      } else if (hit.type === "arrow") {
+        const { x1, y1, x2, y2 } = resolveArrow(hit, byId);
+        pos = { x: (x1 + x2) / 2 - 44, y: (y1 + y2) / 2 - 14 };
+      } else {
+        pos = { x: hit.x, y: hit.y };
+      }
       setEditing({ ...pos, id: hit.id, orig: hit });
       setEditText(hit.text ?? "");
       setTimeout(() => editInputRef.current?.focus(), 0);
@@ -761,7 +769,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-3 py-2">
+      <div className="flex flex-wrap items-center gap-1 border-b border-hairline bg-elevated px-3 py-2">
         {TOOLS.map((t) => (
           <button
             key={t.id}
@@ -773,15 +781,15 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
               tool === t.id
-                ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200"
-                : "text-slate-500 hover:bg-slate-100",
+                ? "bg-accent/10 text-accent ring-1 ring-accent/30"
+                : "text-ink-muted hover:bg-white/[0.06]",
             )}
           >
             <t.icon size={18} />
           </button>
         ))}
 
-        <div className="mx-1 h-6 w-px bg-slate-200" />
+        <div className="mx-1 h-6 w-px bg-hairline" />
 
         {/* Colors */}
         <div className="flex items-center gap-1">
@@ -793,14 +801,14 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
               onClick={() => setColor(c)}
               className={cn(
                 "h-5 w-5 rounded-full ring-offset-1 transition-transform hover:scale-110",
-                color === c ? "ring-2 ring-slate-400" : "ring-1 ring-slate-200",
+                color === c ? "ring-2 ring-white/70" : "ring-1 ring-hairline",
               )}
               style={{ backgroundColor: c }}
             />
           ))}
         </div>
 
-        <div className="mx-1 h-6 w-px bg-slate-200" />
+        <div className="mx-1 h-6 w-px bg-hairline" />
 
         <button
           type="button"
@@ -810,12 +818,12 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
           onClick={() => {
             if (selectedId) deleteShape(selectedId);
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <IconTrash size={18} />
         </button>
 
-        <div className="mx-1 h-6 w-px bg-slate-200" />
+        <div className="mx-1 h-6 w-px bg-hairline" />
 
         <button
           type="button"
@@ -823,7 +831,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
           aria-label="Undo"
           disabled={undoStackRef.current.length === 0}
           onClick={undo}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <IconArrowBackUp size={18} />
         </button>
@@ -833,12 +841,12 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
           aria-label="Redo"
           disabled={redoStackRef.current.length === 0}
           onClick={redo}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <IconArrowForwardUp size={18} />
         </button>
 
-        <div className="mx-1 h-6 w-px bg-slate-200" />
+        <div className="mx-1 h-6 w-px bg-hairline" />
 
         <div className="relative">
           <button
@@ -847,7 +855,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             aria-label="Export"
             disabled={shapes.length === 0}
             onClick={() => setExportOpen((o) => !o)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <IconDownload size={18} />
           </button>
@@ -857,7 +865,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                 className="fixed inset-0 z-20"
                 onClick={() => setExportOpen(false)}
               />
-              <div className="absolute left-0 top-full z-30 mt-1 w-36 overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+              <div className="absolute left-0 top-full z-30 mt-1 w-36 overflow-hidden rounded-lg border border-hairline bg-elevated p-1 shadow-glow-sm">
                 <button
                   type="button"
                   onClick={() => {
@@ -866,9 +874,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                     );
                     setExportOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-ink hover:bg-white/[0.04]"
                 >
-                  <IconPhoto size={16} className="text-slate-400" />
+                  <IconPhoto size={16} className="text-ink-faint" />
                   PNG image
                 </button>
                 <button
@@ -879,9 +887,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                     );
                     setExportOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-ink hover:bg-white/[0.04]"
                 >
-                  <IconDownload size={16} className="text-slate-400" />
+                  <IconDownload size={16} className="text-ink-faint" />
                   SVG vector
                 </button>
               </div>
@@ -903,11 +911,11 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                       ? `${p.display_name} (you)`
                       : p.display_name
                   }
-                  className="h-7 w-7 rounded-full border-2 border-white bg-brand-50"
+                  className="h-7 w-7 rounded-full border-2 border-elevated bg-surface"
                 />
               ))}
               {presence.length > 5 && (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[10px] font-semibold text-slate-500">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-elevated bg-surface text-[10px] font-semibold text-ink-muted">
                   +{presence.length - 5}
                 </span>
               )}
@@ -916,7 +924,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
 
           {/* Connection status */}
           <span
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted"
             title={`Realtime: ${status}`}
           >
             <span
@@ -925,7 +933,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                 status === "open" && "animate-soft-pulse bg-emerald-500",
                 status === "connecting" && "bg-amber-400",
                 (status === "closed" || status === "error") && "bg-rose-400",
-                status === "idle" && "bg-slate-300",
+                status === "idle" && "bg-ink-faint",
               )}
             />
             v{version}
@@ -987,6 +995,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                   selected={s.id === selectedId}
                   index={byId}
                   linked={s.id === linkTargetId}
+                  editingId={editing?.id ?? null}
                 />
               ))}
 
@@ -1023,7 +1032,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
               }
             }}
             placeholder="Type…"
-            className="absolute z-20 min-w-[120px] rounded border border-brand-300 bg-white/95 px-1.5 py-0.5 text-base shadow-sm outline-none"
+            className="absolute z-20 min-w-[120px] rounded border border-accent/40 bg-elevated px-1.5 py-0.5 text-base text-ink outline-none"
             style={{
               left: toScreen(editing.x, editing.y).x,
               top: toScreen(editing.x, editing.y).y,
@@ -1035,10 +1044,10 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
         {/* Empty hint */}
         {rendered.length === 0 && !editing && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-            <p className="font-semibold text-slate-500">
+            <p className="font-semibold text-ink-muted">
               Your canvas is live — start designing
             </p>
-            <p className="max-w-xs text-sm text-slate-400">
+            <p className="max-w-xs text-sm text-ink-faint">
               Drop system-design components from the left rail, then connect them
               with arrows. Everything syncs and persists in real time.
             </p>
@@ -1046,12 +1055,12 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
         )}
 
         {/* Zoom controls */}
-        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white/90 p-1 shadow-sm backdrop-blur">
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-0.5 rounded-lg border border-hairline bg-surface/80 p-1 backdrop-blur">
           <button
             type="button"
             title="Zoom out"
             onClick={() => zoomFromCenter(1 / 1.2)}
-            className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-white/[0.06]"
           >
             <IconMinus size={16} />
           </button>
@@ -1059,7 +1068,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             type="button"
             title="Reset zoom"
             onClick={() => setView({ x: 0, y: 0, scale: 1 })}
-            className="min-w-[3rem] rounded px-1 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+            className="min-w-[3rem] rounded px-1 py-1 text-xs font-medium text-ink-muted hover:bg-white/[0.06]"
           >
             {Math.round(view.scale * 100)}%
           </button>
@@ -1067,16 +1076,16 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             type="button"
             title="Zoom in"
             onClick={() => zoomFromCenter(1.2)}
-            className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-white/[0.06]"
           >
             <IconPlus size={16} />
           </button>
-          <div className="mx-0.5 h-5 w-px bg-slate-200" />
+          <div className="mx-0.5 h-5 w-px bg-hairline" />
           <button
             type="button"
             title="Fit to content"
             onClick={fitToContent}
-            className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-white/[0.06]"
           >
             <IconMaximize size={16} />
           </button>
@@ -1092,11 +1101,13 @@ function ShapeView({
   selected,
   index,
   linked,
+  editingId,
 }: {
   shape: Shape;
   selected: boolean;
   index: Map<string, Shape>;
   linked: boolean;
+  editingId: string | null;
 }) {
   const sw = selected ? 3 : 2.5;
   if (shape.type === "rect") {
@@ -1130,17 +1141,49 @@ function ShapeView({
   }
   if (shape.type === "arrow") {
     const { x1, y1, x2, y2 } = resolveArrow(shape, index);
+    const label = shape.text?.trim();
+    const showLabel = label && shape.id !== editingId;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const lw = Math.max(24, label ? label.length * 7 + 14 : 0);
     return (
-      <line
-        x1={x1}
-        y1={y1}
-        x2={x2}
-        y2={y2}
-        stroke={shape.color}
-        strokeWidth={sw}
-        strokeLinecap="round"
-        markerEnd={`url(#arrow-${shape.color.replace("#", "")})`}
-      />
+      <g>
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke={shape.color}
+          strokeWidth={sw}
+          strokeLinecap="round"
+          markerEnd={`url(#arrow-${shape.color.replace("#", "")})`}
+        />
+        {showLabel && (
+          <>
+            <rect
+              x={mx - lw / 2}
+              y={my - 10}
+              width={lw}
+              height={20}
+              rx={6}
+              fill="#12151B"
+              stroke={shape.color}
+              strokeOpacity={0.5}
+            />
+            <text
+              x={mx}
+              y={my}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={12}
+              fontWeight={600}
+              className="select-none fill-ink"
+            >
+              {label}
+            </text>
+          </>
+        )}
+      </g>
     );
   }
   if (shape.type === "component") {
@@ -1167,7 +1210,7 @@ function ShapeView({
           width={n.w}
           height={n.h}
           rx={12}
-          fill="white"
+          fill="#161A22"
           stroke={shape.color}
           strokeWidth={sw}
         />
@@ -1188,7 +1231,7 @@ function ShapeView({
         >
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-2 text-center">
             <Icon size={26} color={shape.color} stroke={1.8} />
-            <span className="text-[11px] font-semibold leading-tight text-slate-700">
+            <span className="text-[11px] font-semibold leading-tight text-ink">
               {shape.text}
             </span>
           </div>
@@ -1251,7 +1294,7 @@ function SelectionOverlay({
         width={w + 10}
         height={h + 10}
         fill="none"
-        stroke="#0d9488"
+        stroke="#2dd4bf"
         strokeWidth={1.5}
         strokeDasharray="5 4"
         rx={6}
@@ -1262,8 +1305,8 @@ function SelectionOverlay({
           y={handleY - 5}
           width={10}
           height={10}
-          fill="white"
-          stroke="#0d9488"
+          fill="#0A0C10"
+          stroke="#2dd4bf"
           strokeWidth={1.5}
           rx={2}
         />
@@ -1324,21 +1367,21 @@ function StencilRail({
     : STENCILS;
 
   return (
-    <div className="flex w-[100px] shrink-0 flex-col border-r border-slate-200 bg-white">
-      <div className="sticky top-0 z-10 space-y-1.5 bg-white px-2 pb-1.5 pt-2">
-        <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+    <div className="flex w-[100px] shrink-0 flex-col border-r border-hairline bg-elevated">
+      <div className="sticky top-0 z-10 space-y-1.5 bg-elevated px-2 pb-1.5 pt-2">
+        <span className="block text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
           Components
         </span>
         <div className="relative">
           <IconSearch
             size={13}
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-ink-faint"
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search…"
-            className="w-full rounded-md border border-slate-200 bg-slate-50 py-1 pl-6 pr-1.5 text-xs text-slate-700 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white"
+            className="w-full rounded-md border border-hairline bg-surface py-1 pl-6 pr-1.5 text-xs text-ink outline-none placeholder:text-ink-faint focus:border-accent/40"
           />
         </div>
       </div>
@@ -1357,19 +1400,19 @@ function StencilRail({
               className={cn(
                 "flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors",
                 active
-                  ? "border-brand-300 bg-brand-50"
-                  : "border-transparent hover:bg-slate-50",
+                  ? "border-accent/40 bg-accent/10"
+                  : "border-transparent hover:bg-white/[0.04]",
               )}
             >
               <Icon size={20} color={s.color} stroke={1.8} />
-              <span className="text-[10px] font-medium leading-tight text-slate-600">
+              <span className="text-[10px] font-medium leading-tight text-ink-muted">
                 {s.label}
               </span>
             </button>
           );
         })}
         {filtered.length === 0 && (
-          <p className="px-1 pt-3 text-center text-[10px] text-slate-400">
+          <p className="px-1 pt-3 text-center text-[10px] text-ink-faint">
             No components match “{query}”.
           </p>
         )}

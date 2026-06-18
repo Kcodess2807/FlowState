@@ -5,7 +5,7 @@ from app.api.deps import CanvasContext, require_canvas_role
 from app.core.database import get_db
 from app.models.workspace import WorkspaceRole
 from app.schemas.canvas import CanvasRead
-from app.schemas.operation import OperationCreate, OperationRead
+from app.schemas.operation import OperationCreate, OperationRead, UndoResult
 from app.schemas.snapshot import CanvasStateRead, SnapshotRead
 from app.schemas.version import (
     CanvasVersionCreate,
@@ -14,12 +14,14 @@ from app.schemas.version import (
     RestoreResult,
     StateDiff,
 )
-from app.services.operation import append_operation, list_operations
+from app.services.commit import broadcast_operation, commit_and_broadcast
+from app.services.operation import list_operations
 from app.services.snapshot import (
     create_snapshot,
     list_snapshots,
     reconstruct_state,
 )
+from app.services.undo import perform_redo, perform_undo
 from app.services.version import (
     create_version,
     diff_versions,
@@ -48,7 +50,7 @@ async def commit_operation(
     ctx: CanvasContext = Depends(require_canvas_role(WorkspaceRole.editor)),
     db: AsyncSession = Depends(get_db),
 ):
-    operation, created = await append_operation(
+    operation, created = await commit_and_broadcast(
         db,
         canvas_id=ctx.canvas.id,
         op_type=payload.type,
@@ -156,3 +158,29 @@ async def restore_canvas(
     return RestoreResult(
         canvas_id=ctx.canvas.id, version=new_version, operations_applied=ops
     )
+
+
+@router.post("/{canvas_id}/undo", response_model=UndoResult)
+async def undo_canvas(
+    ctx: CanvasContext = Depends(require_canvas_role(WorkspaceRole.editor)),
+    db: AsyncSession = Depends(get_db),
+):
+    operation = await perform_undo(db, ctx.canvas.id, ctx.user.id)
+    if operation is None:
+        return UndoResult(applied=False)
+    await db.commit()
+    await broadcast_operation(ctx.canvas.id, operation)
+    return UndoResult(applied=True, operation=OperationRead.model_validate(operation))
+
+
+@router.post("/{canvas_id}/redo", response_model=UndoResult)
+async def redo_canvas(
+    ctx: CanvasContext = Depends(require_canvas_role(WorkspaceRole.editor)),
+    db: AsyncSession = Depends(get_db),
+):
+    operation = await perform_redo(db, ctx.canvas.id, ctx.user.id)
+    if operation is None:
+        return UndoResult(applied=False)
+    await db.commit()
+    await broadcast_operation(ctx.canvas.id, operation)
+    return UndoResult(applied=True, operation=OperationRead.model_validate(operation))

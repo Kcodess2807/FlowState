@@ -13,7 +13,7 @@ export function DoodleUnderline({
       viewBox="0 0 240 16"
       preserveAspectRatio="none"
       className={cn(
-        "pointer-events-none absolute -bottom-2 left-0 h-3 w-full text-brand-500",
+        "pointer-events-none absolute -bottom-2 left-0 h-3 w-full text-accent",
         className,
       )}
       fill="none"

@@ -27,14 +27,14 @@ export default function Explore() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <FadeIn className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <span className="text-sm font-semibold uppercase tracking-widest text-brand-600">
+            <span className="text-sm font-semibold uppercase tracking-widest text-accent">
               Community
             </span>
-            <h1 className="relative mt-2 inline-block text-4xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="relative mt-2 inline-block text-4xl font-extrabold tracking-tight text-ink">
               Explore
               <DoodleUnderline className="-bottom-3" />
             </h1>
-            <p className="mt-5 text-slate-600">
+            <p className="mt-5 text-ink-muted">
               Browse solutions shared by the community. Steal ideas, leave a like.
             </p>
           </div>
@@ -48,8 +48,8 @@ export default function Explore() {
                 className={cn(
                   "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
                   sort === s
-                    ? "border-brand-500 bg-brand-50 text-brand-700"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300",
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "border-hairline text-ink-muted hover:border-accent/40",
                 )}
               >
                 {s}
@@ -63,12 +63,12 @@ export default function Explore() {
             ? Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white"
+                  className="animate-pulse overflow-hidden rounded-xl border border-hairline bg-elevated"
                 >
-                  <div className="aspect-[16/10] bg-slate-100" />
+                  <div className="aspect-[16/10] bg-white/[0.05]" />
                   <div className="space-y-3 p-4">
-                    <div className="h-4 w-2/3 rounded bg-slate-100" />
-                    <div className="h-3 w-1/2 rounded bg-slate-100" />
+                    <div className="h-4 w-2/3 rounded bg-white/[0.05]" />
+                    <div className="h-3 w-1/2 rounded bg-white/[0.05]" />
                   </div>
                 </div>
               ))

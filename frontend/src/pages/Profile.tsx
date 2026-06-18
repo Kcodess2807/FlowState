@@ -97,7 +97,7 @@ export default function Profile() {
     return (
       <SiteLayout>
         <div className="flex min-h-[60vh] items-center justify-center">
-          <IconLoader2 className="animate-spin text-brand-500" size={28} />
+          <IconLoader2 className="animate-spin text-accent" size={28} />
         </div>
       </SiteLayout>
     );
@@ -107,8 +107,8 @@ export default function Profile() {
     return (
       <SiteLayout>
         <div className="mx-auto max-w-md px-4 py-24 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">User not found</h1>
-          <p className="mt-2 text-slate-500">
+          <h1 className="text-2xl font-bold text-ink">User not found</h1>
+          <p className="mt-2 text-ink-muted">
             No profile exists for “{username}”.
           </p>
           <Button className="mt-6" asChild>
@@ -135,37 +135,36 @@ export default function Profile() {
 
   return (
     <SiteLayout>
-      <div className="border-b border-slate-200 bg-gradient-to-b from-brand-50/70 to-white">
+      <div className="border-b border-hairline bg-elevated">
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
           <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
             <Avatar
               src={profile.avatarUrl}
               alt={profile.displayName}
               size={88}
-              className="shadow-card"
             />
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                <h1 className="text-2xl font-extrabold tracking-tight text-ink">
                   {profile.displayName}
                 </h1>
                 {isSelf && (
-                  <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">
                     You
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-500">@{profile.username}</p>
-              <p className="mt-2 max-w-xl text-sm text-slate-600">
+              <p className="text-sm text-ink-muted">@{profile.username}</p>
+              <p className="mt-2 max-w-xl text-sm text-ink-muted">
                 {profile.bio}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-ink-muted">
                 {profile.githubUrl && (
                   <a
                     href={profile.githubUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 hover:text-brand-700"
+                    className="inline-flex items-center gap-1.5 hover:text-accent"
                   >
                     <IconBrandGithub size={16} />
                     GitHub
@@ -183,13 +182,13 @@ export default function Profile() {
             {stats.map((s) => (
               <div
                 key={s.label}
-                className="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-card"
+                className="rounded-xl border border-hairline bg-elevated p-4 text-center"
               >
-                <s.icon size={20} className="mx-auto text-brand-500" />
-                <div className="mt-2 text-xl font-extrabold text-slate-900">
+                <s.icon size={20} className="mx-auto text-accent" />
+                <div className="mt-2 text-xl font-extrabold text-ink">
                   {formatCount(s.value)}
                 </div>
-                <div className="text-xs text-slate-500">{s.label}</div>
+                <div className="text-xs text-ink-muted">{s.label}</div>
               </div>
             ))}
           </div>
@@ -198,13 +197,13 @@ export default function Profile() {
 
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         {isSelf && activity && (
-          <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+          <section className="mb-10 rounded-2xl border border-hairline bg-elevated p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="relative inline-block text-lg font-bold text-slate-900">
+              <h2 className="relative inline-block text-lg font-bold text-ink">
                 Activity
                 <DoodleUnderline className="-bottom-2" />
               </h2>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-ink-muted">
                 {formatCount(activity.total_contributions)} contributions in the
                 last year
               </p>
@@ -247,25 +246,25 @@ export default function Profile() {
                 body="Bookmark problems to revisit them later."
               />
             ) : (
-              <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+              <div className="divide-y divide-hairline overflow-hidden rounded-xl border border-hairline bg-elevated">
                 {saved.map((p) => (
                   <Link
                     key={p.id}
                     to={`/problems/${p.slug}`}
-                    className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-brand-50/40"
+                    className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-white/[0.04]"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-3">
-                        <span className="truncate font-semibold text-slate-900">
+                        <span className="truncate font-semibold text-ink">
                           {p.title}
                         </span>
                         <DifficultyBadge difficulty={p.difficulty} />
                       </div>
-                      <p className="mt-1 line-clamp-1 text-sm text-slate-500">
+                      <p className="mt-1 line-clamp-1 text-sm text-ink-muted">
                         {p.summary}
                       </p>
                     </div>
-                    <span className="shrink-0 text-sm font-semibold text-brand-600">
+                    <span className="shrink-0 text-sm font-semibold text-accent">
                       Solve →
                     </span>
                   </Link>
@@ -281,12 +280,12 @@ export default function Profile() {
 
 function EmptyTab({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-      <span className="relative inline-block text-lg font-semibold text-slate-700">
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-hairline-strong bg-elevated px-6 py-16 text-center">
+      <span className="relative inline-block text-lg font-semibold text-ink-muted">
         {title}
-        <DoodleUnderline className="-bottom-2 text-brand-300" />
+        <DoodleUnderline className="-bottom-2 text-accent/40" />
       </span>
-      <p className="mt-3 text-sm text-slate-500">{body}</p>
+      <p className="mt-3 text-sm text-ink-muted">{body}</p>
     </div>
   );
 }

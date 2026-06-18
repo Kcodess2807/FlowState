@@ -56,7 +56,17 @@ function shapeToSvg(s: Shape, index: Map<string, Shape>): string {
   if (s.type === "arrow") {
     const { x1, y1, x2, y2 } = resolveArrow(s, index);
     const marker = `url(#arrow-${s.color.replace("#", "")})`;
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${s.color}" stroke-width="2.5" stroke-linecap="round" marker-end="${marker}"/>`;
+    const line = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${s.color}" stroke-width="2.5" stroke-linecap="round" marker-end="${marker}"/>`;
+    const label = s.text?.trim();
+    if (!label) return line;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const lw = Math.max(24, label.length * 7 + 14);
+    return [
+      line,
+      `<rect x="${mx - lw / 2}" y="${my - 10}" width="${lw}" height="20" rx="6" fill="#ffffff" stroke="${s.color}" stroke-opacity="0.4"/>`,
+      `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#334155">${esc(label)}</text>`,
+    ].join("");
   }
   if (s.type === "rect") {
     const n = normalize(s);
