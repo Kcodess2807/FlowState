@@ -37,6 +37,11 @@ export function timeAgo(iso: string): string {
   return `${Math.floor(months / 12)}y ago`;
 }
 
+/** Derive a URL-safe username handle from a display name. */
+export function usernameFromName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
 /** Today's date as "Thursday, June 18". */
 export function todayLong(): string {
   return new Date().toLocaleDateString("en-US", {

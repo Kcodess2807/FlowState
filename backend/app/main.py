@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, canvases, health, workspaces, ws
+from app.api.routes import activity, auth, canvases, health, workspaces, ws
 from app.core.config import settings
 from app.core.database import engine
 
@@ -37,6 +37,7 @@ app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(workspaces.router, prefix=settings.API_V1_PREFIX)
 app.include_router(canvases.router, prefix=settings.API_V1_PREFIX)
+app.include_router(activity.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ws.router, prefix=settings.API_V1_PREFIX)
 
 

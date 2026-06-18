@@ -40,3 +40,14 @@ def build_state(
     for op in operations:
         apply_operation(state, op.op_type, op.payload)
     return state
+
+
+def diff_state(old: CanvasState, new: CanvasState) -> dict[str, Any]:
+    added = {sid: s for sid, s in new.items() if sid not in old}
+    removed = {sid: s for sid, s in old.items() if sid not in new}
+    modified = {
+        sid: {"before": old[sid], "after": new[sid]}
+        for sid in old.keys() & new.keys()
+        if old[sid] != new[sid]
+    }
+    return {"added": added, "removed": removed, "modified": modified}

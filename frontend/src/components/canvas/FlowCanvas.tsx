@@ -4,6 +4,11 @@ import {
   IconArrowForwardUp,
   IconArrowUpRight,
   IconCircle,
+  IconDownload,
+  IconMaximize,
+  IconMinus,
+  IconPhoto,
+  IconPlus,
   IconPointer,
   IconSearch,
   IconSquare,
@@ -27,8 +32,8 @@ interface Command {
   payload: Record<string, unknown>;
 }
 interface HistoryEntry {
-  forward: Command;
-  inverse: Command;
+  forwards: Command[];
+  inverses: Command[];
 }
 
 type DrawTool = "rect" | "ellipse" | "arrow" | "text";
@@ -61,8 +66,19 @@ const newId = () =>
     ? crypto.randomUUID()
     : `s-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
+const MIN_SCALE = 0.2;
+const MAX_SCALE = 3;
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, n));
+
+interface View {
+  x: number;
+  y: number;
+  scale: number;
+}
+
 // Normalize a box so (x,y) is top-left and (w,h) positive.
-function normalize(s: Shape): Shape {
+export function normalize(s: Shape): Shape {
   if (s.type === "arrow") return s;
   let { x, y, w, h } = s;
   if (w < 0) {
@@ -127,7 +143,7 @@ export interface ArrowPoints {
   y2: number;
 }
 
-function resolveArrow(
+export function resolveArrow(
   arrow: Shape,
   index: Map<string, Shape>,
 ): ArrowPoints {
@@ -147,18 +163,26 @@ function hitTest(
   px: number,
   py: number,
   index: Map<string, Shape>,
+  scale = 1,
 ): Shape | null {
-  // Topmost first.
+  // Tolerances are in world units; keep them ~constant on screen.
+  const pad = 6 / scale;
+  const lineTol = 9 / scale;
   for (let i = shapes.length - 1; i >= 0; i--) {
     const s = shapes[i];
     if (s.type === "arrow") {
       const { x1, y1, x2, y2 } = resolveArrow(s, index);
-      if (distToSegment(px, py, x1, y1, x2, y2) < 9) return s;
+      if (distToSegment(px, py, x1, y1, x2, y2) < lineTol) return s;
     } else {
       const n = normalize(s);
       const w = s.type === "text" ? Math.max(n.w, 40) : n.w;
       const h = s.type === "text" ? Math.max(n.h, 22) : n.h;
-      if (px >= n.x - 6 && px <= n.x + w + 6 && py >= n.y - 6 && py <= n.y + h + 6)
+      if (
+        px >= n.x - pad &&
+        px <= n.x + w + pad &&
+        py >= n.y - pad &&
+        py <= n.y + h + pad
+      )
         return s;
     }
   }
@@ -190,6 +214,10 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
   } | null>(null);
   const [editText, setEditText] = useState("");
   const [, setHistoryVersion] = useState(0);
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const [spaceDown, setSpaceDown] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -199,24 +227,34 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
   const shapesRef = useRef<Shape[]>(shapes);
   const undoStackRef = useRef<HistoryEntry[]>([]);
   const redoStackRef = useRef<HistoryEntry[]>([]);
+  const viewRef = useRef<View>(view);
+  const spaceDownRef = useRef(false);
+  const panRef = useRef({ active: false, sx: 0, sy: 0, ox: 0, oy: 0 });
 
   draftRef.current = draft;
   shapesRef.current = shapes;
+  viewRef.current = view;
 
-  const run = useCallback(
-    (forward: Command, inverse: Command) => {
-      commit(forward.type, forward.payload);
-      undoStackRef.current.push({ forward, inverse });
+  const applyBatch = useCallback(
+    (forwards: Command[], inverses: Command[]) => {
+      if (forwards.length === 0) return;
+      forwards.forEach((c) => commit(c.type, c.payload));
+      undoStackRef.current.push({ forwards, inverses });
       redoStackRef.current = [];
       setHistoryVersion((v) => v + 1);
     },
     [commit],
   );
 
+  const run = useCallback(
+    (forward: Command, inverse: Command) => applyBatch([forward], [inverse]),
+    [applyBatch],
+  );
+
   const undo = useCallback(() => {
     const entry = undoStackRef.current.pop();
     if (!entry) return;
-    commit(entry.inverse.type, entry.inverse.payload);
+    entry.inverses.forEach((c) => commit(c.type, c.payload));
     redoStackRef.current.push(entry);
     setSelectedId(null);
     setHistoryVersion((v) => v + 1);
@@ -225,31 +263,150 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
   const redo = useCallback(() => {
     const entry = redoStackRef.current.pop();
     if (!entry) return;
-    commit(entry.forward.type, entry.forward.payload);
+    entry.forwards.forEach((c) => commit(c.type, c.payload));
     undoStackRef.current.push(entry);
     setHistoryVersion((v) => v + 1);
   }, [commit]);
 
+  const asPayload = (s: Shape) => s as unknown as Record<string, unknown>;
+
+  // Deleting a node also removes connectors anchored to it, as one undo step.
   const deleteShape = useCallback(
     (id: string) => {
       const shape = shapesRef.current.find((s) => s.id === id);
       if (!shape) return;
-      run(
-        { type: "delete_shape", payload: { id } },
-        {
-          type: "create_shape",
-          payload: shape as unknown as Record<string, unknown>,
-        },
-      );
+      const forwards: Command[] = [{ type: "delete_shape", payload: { id } }];
+      const inverses: Command[] = [
+        { type: "create_shape", payload: asPayload(shape) },
+      ];
+      if (isAnchorable(shape)) {
+        for (const a of shapesRef.current) {
+          if (a.type === "arrow" && (a.fromId === id || a.toId === id)) {
+            forwards.push({ type: "delete_shape", payload: { id: a.id } });
+            inverses.push({ type: "create_shape", payload: asPayload(a) });
+          }
+        }
+      }
+      applyBatch(forwards, inverses);
       setSelectedId((cur) => (cur === id ? null : cur));
     },
-    [run],
+    [applyBatch],
   );
+
+  const zoomAt = useCallback((sx: number, sy: number, factor: number) => {
+    setView((v) => {
+      const scale = clamp(v.scale * factor, MIN_SCALE, MAX_SCALE);
+      const k = scale / v.scale;
+      return { scale, x: sx - (sx - v.x) * k, y: sy - (sy - v.y) * k };
+    });
+  }, []);
+
+  const zoomFromCenter = (factor: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    zoomAt(r.width / 2, r.height / 2, factor);
+  };
+
+  const fitToContent = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ss = shapesRef.current;
+    if (ss.length === 0) {
+      setView({ x: 0, y: 0, scale: 1 });
+      return;
+    }
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const s of ss) {
+      let x1: number;
+      let y1: number;
+      let x2: number;
+      let y2: number;
+      if (s.type === "arrow") {
+        x1 = Math.min(s.x, s.x + s.w);
+        y1 = Math.min(s.y, s.y + s.h);
+        x2 = Math.max(s.x, s.x + s.w);
+        y2 = Math.max(s.y, s.y + s.h);
+      } else {
+        const n = normalize(s);
+        x1 = n.x;
+        y1 = n.y;
+        x2 = n.x + (s.type === "text" ? Math.max(n.w, 40) : n.w);
+        y2 = n.y + (s.type === "text" ? Math.max(n.h, 22) : n.h);
+      }
+      minX = Math.min(minX, x1);
+      minY = Math.min(minY, y1);
+      maxX = Math.max(maxX, x2);
+      maxY = Math.max(maxY, y2);
+    }
+    const bw = Math.max(maxX - minX, 1);
+    const bh = Math.max(maxY - minY, 1);
+    const r = el.getBoundingClientRect();
+    const pad = 64;
+    const scale = clamp(
+      Math.min((r.width - pad * 2) / bw, (r.height - pad * 2) / bh),
+      MIN_SCALE,
+      MAX_SCALE,
+    );
+    setView({
+      x: (r.width - bw * scale) / 2 - minX * scale,
+      y: (r.height - bh * scale) / 2 - minY * scale,
+      scale,
+    });
+  }, []);
 
   useEffect(() => {
     window.__flowstateReady = true;
     return () => {
       window.__flowstateReady = false;
+    };
+  }, []);
+
+  // Wheel: pan by default, zoom toward the cursor with ctrl/cmd (or pinch).
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      if (e.ctrlKey || e.metaKey) {
+        zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.01));
+      } else {
+        setView((v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }));
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [zoomAt]);
+
+  // Hold space to pan.
+  useEffect(() => {
+    const isTyping = () => {
+      const el = document.activeElement;
+      return (
+        el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+      );
+    };
+    const down = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !isTyping()) {
+        spaceDownRef.current = true;
+        setSpaceDown(true);
+      }
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        spaceDownRef.current = false;
+        setSpaceDown(false);
+      }
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
     };
   }, []);
 
@@ -284,9 +441,15 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedId, editing, deleteShape, undo, redo]);
 
-  const getPoint = (e: { clientX: number; clientY: number }) => {
+  const getScreen = (e: { clientX: number; clientY: number }) => {
     const rect = containerRef.current!.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const getPoint = (e: { clientX: number; clientY: number }) => {
+    const s = getScreen(e);
+    const v = viewRef.current;
+    return { x: (s.x - v.x) / v.scale, y: (s.y - v.y) / v.scale };
   };
 
   // Merge committed shapes with the in-progress draft.
@@ -310,15 +473,25 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (editing) return;
-    const p = getPoint(e);
     svgRef.current?.setPointerCapture(e.pointerId);
+
+    // Pan with space-drag or the middle mouse button.
+    if (spaceDownRef.current || e.button === 1) {
+      const s = getScreen(e);
+      const v = viewRef.current;
+      panRef.current = { active: true, sx: s.x, sy: s.y, ox: v.x, oy: v.y };
+      setIsPanning(true);
+      return;
+    }
+
+    const p = getPoint(e);
 
     if (tool === "select") {
       if (selected && selected.type !== "text" && !isBoundArrow(selected)) {
         const n = normalize(selected);
         const hx = selected.type === "arrow" ? selected.x + selected.w : n.x + n.w;
         const hy = selected.type === "arrow" ? selected.y + selected.h : n.y + n.h;
-        if (Math.hypot(p.x - hx, p.y - hy) < 12) {
+        if (Math.hypot(p.x - hx, p.y - hy) < 12 / viewRef.current.scale) {
           gestureRef.current = {
             mode: "resize",
             startX: p.x,
@@ -328,7 +501,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
           return;
         }
       }
-      const hit = hitTest(shapes, p.x, p.y, byId);
+      const hit = hitTest(shapes, p.x, p.y, byId, viewRef.current.scale);
       if (hit) {
         setSelectedId(hit.id);
         if (!isBoundArrow(hit)) {
@@ -373,7 +546,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
     }
 
     if (tool === "arrow") {
-      const over = hitTest(shapes, p.x, p.y, byId);
+      const over = hitTest(shapes, p.x, p.y, byId, viewRef.current.scale);
       const fromId = over && isAnchorable(over) ? over.id : undefined;
       setDraft({
         id: newId(),
@@ -405,6 +578,17 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    if (panRef.current.active) {
+      const s = getScreen(e);
+      const pan = panRef.current;
+      setView((v) => ({
+        ...v,
+        x: pan.ox + (s.x - pan.sx),
+        y: pan.oy + (s.y - pan.sy),
+      }));
+      return;
+    }
+
     const p = getPoint(e);
     sendCursor(p.x, p.y);
 
@@ -416,7 +600,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
       if (d.type === "component") {
         setDraft({ ...d, x: p.x - d.w / 2, y: p.y - d.h / 2 });
       } else if (d.type === "arrow") {
-        const over = hitTest(shapes, p.x, p.y, byId);
+        const over = hitTest(shapes, p.x, p.y, byId, viewRef.current.scale);
         const toId =
           over && isAnchorable(over) && over.id !== d.fromId
             ? over.id
@@ -444,6 +628,13 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
 
   const handlePointerUp = (e: React.PointerEvent) => {
     svgRef.current?.releasePointerCapture(e.pointerId);
+
+    if (panRef.current.active) {
+      panRef.current.active = false;
+      setIsPanning(false);
+      return;
+    }
+
     const g = gestureRef.current;
     const d = draftRef.current;
     gestureRef.current = { mode: "none", startX: 0, startY: 0 };
@@ -497,7 +688,6 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
   const commitText = () => {
     if (!editing) return;
     const text = editText.trim();
-    const asPayload = (s: Shape) => s as unknown as Record<string, unknown>;
 
     if (editing.orig) {
       const orig = editing.orig;
@@ -538,7 +728,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     const p = getPoint(e);
-    const hit = hitTest(shapes, p.x, p.y, byId);
+    const hit = hitTest(shapes, p.x, p.y, byId, viewRef.current.scale);
     if (hit && (hit.type === "text" || hit.type === "component")) {
       setSelectedId(hit.id);
       const pos =
@@ -551,14 +741,22 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
     }
   };
 
-  const cursorClass =
-    tool === "select"
-      ? gestureRef.current.mode === "move"
-        ? "cursor-grabbing"
-        : "cursor-default"
-      : tool === "text"
-        ? "cursor-text"
-        : "cursor-crosshair";
+  const cursorClass = isPanning
+    ? "cursor-grabbing"
+    : spaceDown
+      ? "cursor-grab"
+      : tool === "select"
+        ? gestureRef.current.mode === "move"
+          ? "cursor-grabbing"
+          : "cursor-default"
+        : tool === "text"
+          ? "cursor-text"
+          : "cursor-crosshair";
+
+  const toScreen = (wx: number, wy: number) => ({
+    x: wx * view.scale + view.x,
+    y: wy * view.scale + view.y,
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -639,6 +837,57 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
         >
           <IconArrowForwardUp size={18} />
         </button>
+
+        <div className="mx-1 h-6 w-px bg-slate-200" />
+
+        <div className="relative">
+          <button
+            type="button"
+            title="Export"
+            aria-label="Export"
+            disabled={shapes.length === 0}
+            onClick={() => setExportOpen((o) => !o)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
+          >
+            <IconDownload size={18} />
+          </button>
+          {exportOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-20"
+                onClick={() => setExportOpen(false)}
+              />
+              <div className="absolute left-0 top-full z-30 mt-1 w-36 overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void import("./canvas-export").then((m) =>
+                      m.exportPng(shapes),
+                    );
+                    setExportOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <IconPhoto size={16} className="text-slate-400" />
+                  PNG image
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void import("./canvas-export").then((m) =>
+                      m.exportSvg(shapes),
+                    );
+                    setExportOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <IconDownload size={16} className="text-slate-400" />
+                  SVG vector
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="ml-auto flex items-center gap-3">
           {/* Presence */}
@@ -726,31 +975,38 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             ))}
           </defs>
 
-          {rendered
-            .filter((s) => !(editing && editing.id === s.id && s.type === "text"))
-            .map((s) => (
-              <ShapeView
-                key={s.id}
-                shape={s}
-                selected={s.id === selectedId}
-                index={byId}
-                linked={s.id === linkTargetId}
-              />
-            ))}
+          <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
+            {rendered
+              .filter(
+                (s) => !(editing && editing.id === s.id && s.type === "text"),
+              )
+              .map((s) => (
+                <ShapeView
+                  key={s.id}
+                  shape={s}
+                  selected={s.id === selectedId}
+                  index={byId}
+                  linked={s.id === linkTargetId}
+                />
+              ))}
 
-          {selected && <SelectionOverlay shape={selected} index={byId} />}
+            {selected && <SelectionOverlay shape={selected} index={byId} />}
+          </g>
         </svg>
 
         {/* Remote cursors */}
-        {Object.entries(cursors).map(([uid, c]) => (
-          <RemoteCursorView
-            key={uid}
-            x={c.x}
-            y={c.y}
-            name={c.name}
-            color={colorForUser(uid)}
-          />
-        ))}
+        {Object.entries(cursors).map(([uid, c]) => {
+          const s = toScreen(c.x, c.y);
+          return (
+            <RemoteCursorView
+              key={uid}
+              x={s.x}
+              y={s.y}
+              name={c.name}
+              color={colorForUser(uid)}
+            />
+          );
+        })}
 
         {/* Inline text editor */}
         {editing && (
@@ -768,7 +1024,11 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             }}
             placeholder="Type…"
             className="absolute z-20 min-w-[120px] rounded border border-brand-300 bg-white/95 px-1.5 py-0.5 text-base shadow-sm outline-none"
-            style={{ left: editing.x, top: editing.y, color }}
+            style={{
+              left: toScreen(editing.x, editing.y).x,
+              top: toScreen(editing.x, editing.y).y,
+              color,
+            }}
           />
         )}
 
@@ -784,6 +1044,43 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             </p>
           </div>
         )}
+
+        {/* Zoom controls */}
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white/90 p-1 shadow-sm backdrop-blur">
+          <button
+            type="button"
+            title="Zoom out"
+            onClick={() => zoomFromCenter(1 / 1.2)}
+            className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+          >
+            <IconMinus size={16} />
+          </button>
+          <button
+            type="button"
+            title="Reset zoom"
+            onClick={() => setView({ x: 0, y: 0, scale: 1 })}
+            className="min-w-[3rem] rounded px-1 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+          >
+            {Math.round(view.scale * 100)}%
+          </button>
+          <button
+            type="button"
+            title="Zoom in"
+            onClick={() => zoomFromCenter(1.2)}
+            className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+          >
+            <IconPlus size={16} />
+          </button>
+          <div className="mx-0.5 h-5 w-px bg-slate-200" />
+          <button
+            type="button"
+            title="Fit to content"
+            onClick={fitToContent}
+            className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+          >
+            <IconMaximize size={16} />
+          </button>
+        </div>
         </div>
       </div>
     </div>

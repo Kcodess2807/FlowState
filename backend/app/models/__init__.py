@@ -3,6 +3,7 @@ from app.models.canvas import Canvas
 from app.models.operation import Operation, OperationType
 from app.models.snapshot import Snapshot
 from app.models.user import User
+from app.models.version import CanvasVersion
 from app.models.workspace import Workspace, WorkspaceMember, WorkspaceRole
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "Operation",
     "OperationType",
     "Snapshot",
+    "CanvasVersion",
 ]

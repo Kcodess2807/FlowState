@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
+  IconActivity,
   IconBrandGithub,
   IconCalendar,
+  IconCalendarStats,
+  IconFlame,
   IconHeart,
   IconLoader2,
   IconShare3,
@@ -15,37 +18,80 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SolutionCard } from "@/components/shared/SolutionCard";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
 import { DifficultyBadge } from "@/components/shared/DifficultyBadge";
-import { getProfile, getProblems, getSolutionsByAuthor } from "@/lib/api";
+import { ContributionHeatmap } from "@/components/shared/ContributionHeatmap";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getMyActivity,
+  getProblems,
+  getProfile,
+  getSolutionsByAuthor,
+} from "@/lib/api";
+import type { ActivitySummary } from "@/lib/api";
 import type { Problem, Profile as ProfileType, Solution } from "@/types";
-import { formatCount, formatDate } from "@/lib/utils";
+import { formatCount, formatDate, usernameFromName } from "@/lib/utils";
+
+const avatarFor = (seed: string) =>
+  `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(
+    seed,
+  )}&backgroundColor=ccfbf1`;
 
 export default function Profile() {
   const { username = "" } = useParams();
+  const { user, loading: authLoading } = useAuth();
+  const isSelf = !!user && usernameFromName(user.display_name) === username;
+
   const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [activity, setActivity] = useState<ActivitySummary | null>(null);
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [saved, setSaved] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     let active = true;
     setLoading(true);
-    Promise.all([
-      getProfile(username),
-      getSolutionsByAuthor(username),
-      getProblems(),
-    ]).then(([p, sols, problems]) => {
-      if (!active) return;
-      setProfile(p ?? null);
-      setSolutions(sols);
-      if (p) {
-        setSaved(problems.filter((pr) => p.savedProblems.includes(pr.slug)));
+    setActivity(null);
+
+    async function load() {
+      if (isSelf && user) {
+        const self: ProfileType = {
+          username,
+          displayName: user.display_name,
+          bio: "Building system-design muscle on FlowState.",
+          avatarUrl: avatarFor(user.email),
+          githubUrl: "",
+          joinedAt: user.created_at,
+          stats: { problemsSolved: 0, solutionsShared: 0, likesReceived: 0 },
+          savedProblems: [],
+        };
+        const summary = await getMyActivity().catch(() => null);
+        const sols = await getSolutionsByAuthor(username).catch(() => []);
+        if (!active) return;
+        setProfile(self);
+        setActivity(summary);
+        setSolutions(sols);
+        setSaved([]);
+      } else {
+        const [p, sols, problems] = await Promise.all([
+          getProfile(username),
+          getSolutionsByAuthor(username),
+          getProblems(),
+        ]);
+        if (!active) return;
+        setProfile(p ?? null);
+        setSolutions(sols);
+        setSaved(
+          p ? problems.filter((pr) => p.savedProblems.includes(pr.slug)) : [],
+        );
       }
-      setLoading(false);
-    });
+      if (active) setLoading(false);
+    }
+
+    void load();
     return () => {
       active = false;
     };
-  }, [username]);
+  }, [username, isSelf, user, authLoading]);
 
   if (loading) {
     return (
@@ -73,27 +119,22 @@ export default function Profile() {
     );
   }
 
-  const stats = [
-    {
-      icon: IconTrophy,
-      label: "Problems Solved",
-      value: profile.stats.problemsSolved,
-    },
-    {
-      icon: IconShare3,
-      label: "Solutions Shared",
-      value: profile.stats.solutionsShared,
-    },
-    {
-      icon: IconHeart,
-      label: "Likes Received",
-      value: profile.stats.likesReceived,
-    },
-  ];
+  const stats =
+    isSelf && activity
+      ? [
+          { icon: IconFlame, label: "Current Streak", value: activity.current_streak },
+          { icon: IconCalendarStats, label: "Longest Streak", value: activity.longest_streak },
+          { icon: IconActivity, label: "Contributions", value: activity.total_contributions },
+          { icon: IconCalendar, label: "Active Days", value: activity.active_days },
+        ]
+      : [
+          { icon: IconTrophy, label: "Problems Solved", value: profile.stats.problemsSolved },
+          { icon: IconShare3, label: "Solutions Shared", value: profile.stats.solutionsShared },
+          { icon: IconHeart, label: "Likes Received", value: profile.stats.likesReceived },
+        ];
 
   return (
     <SiteLayout>
-      {/* Cover */}
       <div className="border-b border-slate-200 bg-gradient-to-b from-brand-50/70 to-white">
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
           <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
@@ -104,23 +145,32 @@ export default function Profile() {
               className="shadow-card"
             />
             <div className="flex-1">
-              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                {profile.displayName}
-              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                  {profile.displayName}
+                </h1>
+                {isSelf && (
+                  <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+                    You
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-slate-500">@{profile.username}</p>
               <p className="mt-2 max-w-xl text-sm text-slate-600">
                 {profile.bio}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                <a
-                  href={profile.githubUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 hover:text-brand-700"
-                >
-                  <IconBrandGithub size={16} />
-                  GitHub
-                </a>
+                {profile.githubUrl && (
+                  <a
+                    href={profile.githubUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 hover:text-brand-700"
+                  >
+                    <IconBrandGithub size={16} />
+                    GitHub
+                  </a>
+                )}
                 <span className="inline-flex items-center gap-1.5">
                   <IconCalendar size={16} />
                   Joined {formatDate(profile.joinedAt)}
@@ -129,8 +179,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="mt-8 grid grid-cols-3 gap-3 sm:max-w-lg">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:max-w-2xl sm:grid-cols-4">
             {stats.map((s) => (
               <div
                 key={s.label}
@@ -147,12 +196,29 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        {isSelf && activity && (
+          <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="relative inline-block text-lg font-bold text-slate-900">
+                Activity
+                <DoodleUnderline className="-bottom-2" />
+              </h2>
+              <p className="text-sm text-slate-500">
+                {formatCount(activity.total_contributions)} contributions in the
+                last year
+              </p>
+            </div>
+            <div className="mt-6">
+              <ContributionHeatmap summary={activity} />
+            </div>
+          </section>
+        )}
+
         <Tabs defaultValue="solutions">
           <TabsList>
             <TabsTrigger value="solutions">
-              My Solutions ({solutions.length})
+              {isSelf ? "My" : ""} Solutions ({solutions.length})
             </TabsTrigger>
             <TabsTrigger value="saved">
               Saved Problems ({saved.length})
@@ -181,7 +247,7 @@ export default function Profile() {
                 body="Bookmark problems to revisit them later."
               />
             ) : (
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
                 {saved.map((p) => (
                   <Link
                     key={p.id}

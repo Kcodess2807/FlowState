@@ -10,7 +10,7 @@ import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
-import { cn } from "@/lib/utils";
+import { cn, usernameFromName } from "@/lib/utils";
 
 const NAV_LINKS = [
   { to: "/problems", label: "Problems" },
@@ -61,7 +61,7 @@ export function Navbar() {
                   Dashboard
                 </Link>
               </Button>
-              <Link to={`/profile/${user.display_name.toLowerCase()}`}>
+              <Link to={`/profile/${usernameFromName(user.display_name)}`}>
                 <Avatar
                   src={`https://api.dicebear.com/7.x/notionists/svg?seed=${user.email}&backgroundColor=ccfbf1`}
                   alt={user.display_name}

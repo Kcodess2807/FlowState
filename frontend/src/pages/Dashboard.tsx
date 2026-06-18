@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  IconActivity,
   IconArrowRight,
-  IconChartDots3,
+  IconCalendar,
   IconFlame,
-  IconShare3,
 } from "@tabler/icons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
@@ -15,25 +15,43 @@ import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/shared/FadeIn";
 import { GradientText } from "@/components/shared/GradientText";
 import { useAuth } from "@/context/AuthContext";
-import { getProblems, getSolutions } from "@/lib/api";
+import { ContributionHeatmap } from "@/components/shared/ContributionHeatmap";
+import { getMyActivity, getProblems, getSolutions } from "@/lib/api";
+import type { ActivitySummary } from "@/lib/api";
 import type { Problem, Solution } from "@/types";
-import { todayLong } from "@/lib/utils";
-
-const METRICS = [
-  { icon: IconChartDots3, label: "Problems Attempted", value: 8 },
-  { icon: IconShare3, label: "Solutions Shared", value: 3 },
-  { icon: IconFlame, label: "Day Streak", value: 5 },
-];
+import { formatCount, todayLong } from "@/lib/utils";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [problems, setProblems] = useState<Problem[]>([]);
   const [highlights, setHighlights] = useState<Solution[]>([]);
+  const [activity, setActivity] = useState<ActivitySummary | null>(null);
 
   useEffect(() => {
     getProblems().then(setProblems);
     getSolutions("Most Liked").then((s) => setHighlights(s.slice(0, 2)));
+    getMyActivity()
+      .then(setActivity)
+      .catch(() => setActivity(null));
   }, []);
+
+  const metrics = [
+    {
+      icon: IconActivity,
+      label: "Contributions",
+      value: activity?.total_contributions ?? 0,
+    },
+    {
+      icon: IconFlame,
+      label: "Current Streak",
+      value: activity?.current_streak ?? 0,
+    },
+    {
+      icon: IconCalendar,
+      label: "Active Days",
+      value: activity?.active_days ?? 0,
+    },
+  ];
 
   const firstName = user?.display_name?.split(" ")[0] ?? "there";
   const lastAttempted = problems[3];
@@ -54,7 +72,7 @@ export default function Dashboard() {
         {/* Metrics */}
         <FadeIn delay={0.05}>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {METRICS.map((m) => (
+            {metrics.map((m) => (
               <div
                 key={m.label}
                 className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow"
@@ -64,7 +82,7 @@ export default function Dashboard() {
                 </span>
                 <div>
                   <div className="text-2xl font-extrabold text-slate-900">
-                    {m.value}
+                    {formatCount(m.value)}
                   </div>
                   <div className="text-sm text-slate-500">{m.label}</div>
                 </div>
@@ -72,6 +90,23 @@ export default function Dashboard() {
             ))}
           </div>
         </FadeIn>
+
+        {activity && (
+          <FadeIn delay={0.08}>
+            <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-lg font-bold text-slate-900">Your activity</h2>
+                <p className="text-sm text-slate-500">
+                  {formatCount(activity.total_contributions)} contributions in the
+                  last year
+                </p>
+              </div>
+              <div className="mt-6">
+                <ContributionHeatmap summary={activity} />
+              </div>
+            </section>
+          </FadeIn>
+        )}
 
         {/* Continue where you left off */}
         {lastAttempted && (

@@ -107,6 +107,34 @@ export function logout(): void {
   tokenStore.clear();
 }
 
+export interface ActivityDay {
+  date: string;
+  count: number;
+}
+
+export interface ActivitySummary {
+  from_date: string;
+  to_date: string;
+  total_contributions: number;
+  active_days: number;
+  current_streak: number;
+  longest_streak: number;
+  daily: ActivityDay[];
+}
+
+export function getMyActivity(year?: number): Promise<ActivitySummary> {
+  const q = year ? `?year=${year}` : "";
+  return request<ActivitySummary>(`/me/activity${q}`);
+}
+
+export function getUserActivity(
+  userId: string,
+  year?: number,
+): Promise<ActivitySummary> {
+  const q = year ? `?year=${year}` : "";
+  return request<ActivitySummary>(`/users/${userId}/activity${q}`);
+}
+
 export interface Workspace {
   id: string;
   name: string;
