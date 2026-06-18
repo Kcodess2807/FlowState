@@ -1,9 +1,18 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-asyncpg
-alembic
-pydantic
-pydantic-settings
-python-dotenv
-psycopg2-binary
+# Web framework
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.32,<0.35
+
+# Database (async)
+sqlalchemy[asyncio]>=2.0,<2.1
+asyncpg>=0.30,<0.31
+alembic>=1.14,<2.0
+greenlet>=3.0
+
+# Settings / validation
+pydantic[email]>=2.9,<3.0
+pydantic-settings>=2.6,<3.0
+python-dotenv>=1.0
+
+# Auth / security
+pyjwt>=2.10,<3.0
+bcrypt>=4.2,<5.0

@@ -1,0 +1,1082 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  IconArrowBackUp,
+  IconArrowForwardUp,
+  IconArrowUpRight,
+  IconCircle,
+  IconPointer,
+  IconSearch,
+  IconSquare,
+  IconTrash,
+  IconTypography,
+} from "@tabler/icons-react";
+import { useCanvasSocket } from "@/hooks/useCanvasSocket";
+import { CANVAS_COLORS, colorForUser } from "@/types/canvas";
+import type { OperationType, Shape, ShapeType } from "@/types/canvas";
+import {
+  COMPONENT_H,
+  COMPONENT_W,
+  STENCILS,
+  stencilFor,
+} from "./stencils";
+import type { ComponentVariant } from "./stencils";
+import { cn } from "@/lib/utils";
+
+interface Command {
+  type: OperationType;
+  payload: Record<string, unknown>;
+}
+interface HistoryEntry {
+  forward: Command;
+  inverse: Command;
+}
+
+type DrawTool = "rect" | "ellipse" | "arrow" | "text";
+type Tool = "select" | DrawTool | "component";
+
+const TOOLS: { id: Tool; icon: typeof IconPointer; label: string }[] = [
+  { id: "select", icon: IconPointer, label: "Select / move" },
+  { id: "rect", icon: IconSquare, label: "Rectangle" },
+  { id: "ellipse", icon: IconCircle, label: "Ellipse" },
+  { id: "arrow", icon: IconArrowUpRight, label: "Arrow" },
+  { id: "text", icon: IconTypography, label: "Text" },
+];
+
+const TOOL_SHAPE: Record<DrawTool, ShapeType> = {
+  rect: "rect",
+  ellipse: "ellipse",
+  arrow: "arrow",
+  text: "text",
+};
+
+interface Gesture {
+  mode: "none" | "create" | "move" | "resize";
+  startX: number;
+  startY: number;
+  orig?: Shape;
+}
+
+const newId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `s-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+
+// Normalize a box so (x,y) is top-left and (w,h) positive.
+function normalize(s: Shape): Shape {
+  if (s.type === "arrow") return s;
+  let { x, y, w, h } = s;
+  if (w < 0) {
+    x += w;
+    w = -w;
+  }
+  if (h < 0) {
+    y += h;
+    h = -h;
+  }
+  return { ...s, x, y, w, h };
+}
+
+function distToSegment(
+  px: number,
+  py: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): number {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function isAnchorable(s: Shape): boolean {
+  return s.type === "component" || s.type === "rect" || s.type === "ellipse";
+}
+
+function centerOf(s: Shape): { x: number; y: number } {
+  const n = normalize(s);
+  return { x: n.x + n.w / 2, y: n.y + n.h / 2 };
+}
+
+function anchorOnBox(
+  s: Shape,
+  tx: number,
+  ty: number,
+  gap = 4,
+): { x: number; y: number } {
+  const n = normalize(s);
+  const cx = n.x + n.w / 2;
+  const cy = n.y + n.h / 2;
+  const dx = tx - cx;
+  const dy = ty - cy;
+  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  const hw = n.w / 2 + gap;
+  const hh = n.h / 2 + gap;
+  const scale = 1 / Math.max(Math.abs(dx) / hw, Math.abs(dy) / hh);
+  return { x: cx + dx * scale, y: cy + dy * scale };
+}
+
+export interface ArrowPoints {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+function resolveArrow(
+  arrow: Shape,
+  index: Map<string, Shape>,
+): ArrowPoints {
+  const from = arrow.fromId ? index.get(arrow.fromId) : undefined;
+  const to = arrow.toId ? index.get(arrow.toId) : undefined;
+  const freeStart = { x: arrow.x, y: arrow.y };
+  const freeEnd = { x: arrow.x + arrow.w, y: arrow.y + arrow.h };
+  const ref1 = to ? centerOf(to) : freeEnd;
+  const ref2 = from ? centerOf(from) : freeStart;
+  const p1 = from ? anchorOnBox(from, ref1.x, ref1.y) : freeStart;
+  const p2 = to ? anchorOnBox(to, ref2.x, ref2.y) : freeEnd;
+  return { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y };
+}
+
+function hitTest(
+  shapes: Shape[],
+  px: number,
+  py: number,
+  index: Map<string, Shape>,
+): Shape | null {
+  // Topmost first.
+  for (let i = shapes.length - 1; i >= 0; i--) {
+    const s = shapes[i];
+    if (s.type === "arrow") {
+      const { x1, y1, x2, y2 } = resolveArrow(s, index);
+      if (distToSegment(px, py, x1, y1, x2, y2) < 9) return s;
+    } else {
+      const n = normalize(s);
+      const w = s.type === "text" ? Math.max(n.w, 40) : n.w;
+      const h = s.type === "text" ? Math.max(n.h, 22) : n.h;
+      if (px >= n.x - 6 && px <= n.x + w + 6 && py >= n.y - 6 && py <= n.y + h + 6)
+        return s;
+    }
+  }
+  return null;
+}
+
+const avatarUrl = (seed: string) =>
+  `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(
+    seed,
+  )}&backgroundColor=ccfbf1`;
+
+export function FlowCanvas({ canvasId }: { canvasId: string }) {
+  const socket = useCanvasSocket(canvasId);
+  const { shapes, commit, sendCursor, cursors, presence, you, status, version } =
+    socket;
+
+  const [tool, setTool] = useState<Tool>("select");
+  const [componentVariant, setComponentVariant] =
+    useState<ComponentVariant>("server");
+  const [color, setColor] = useState<string>(CANVAS_COLORS[0]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [linkTargetId, setLinkTargetId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Shape | null>(null);
+  const [editing, setEditing] = useState<{
+    x: number;
+    y: number;
+    id?: string;
+    orig?: Shape;
+  } | null>(null);
+  const [editText, setEditText] = useState("");
+  const [, setHistoryVersion] = useState(0);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const gestureRef = useRef<Gesture>({ mode: "none", startX: 0, startY: 0 });
+  const draftRef = useRef<Shape | null>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const shapesRef = useRef<Shape[]>(shapes);
+  const undoStackRef = useRef<HistoryEntry[]>([]);
+  const redoStackRef = useRef<HistoryEntry[]>([]);
+
+  draftRef.current = draft;
+  shapesRef.current = shapes;
+
+  const run = useCallback(
+    (forward: Command, inverse: Command) => {
+      commit(forward.type, forward.payload);
+      undoStackRef.current.push({ forward, inverse });
+      redoStackRef.current = [];
+      setHistoryVersion((v) => v + 1);
+    },
+    [commit],
+  );
+
+  const undo = useCallback(() => {
+    const entry = undoStackRef.current.pop();
+    if (!entry) return;
+    commit(entry.inverse.type, entry.inverse.payload);
+    redoStackRef.current.push(entry);
+    setSelectedId(null);
+    setHistoryVersion((v) => v + 1);
+  }, [commit]);
+
+  const redo = useCallback(() => {
+    const entry = redoStackRef.current.pop();
+    if (!entry) return;
+    commit(entry.forward.type, entry.forward.payload);
+    undoStackRef.current.push(entry);
+    setHistoryVersion((v) => v + 1);
+  }, [commit]);
+
+  const deleteShape = useCallback(
+    (id: string) => {
+      const shape = shapesRef.current.find((s) => s.id === id);
+      if (!shape) return;
+      run(
+        { type: "delete_shape", payload: { id } },
+        {
+          type: "create_shape",
+          payload: shape as unknown as Record<string, unknown>,
+        },
+      );
+      setSelectedId((cur) => (cur === id ? null : cur));
+    },
+    [run],
+  );
+
+  useEffect(() => {
+    window.__flowstateReady = true;
+    return () => {
+      window.__flowstateReady = false;
+    };
+  }, []);
+
+  // Keyboard: delete selected, undo/redo, clear selection.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      if (typing || editing) return;
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
+        e.preventDefault();
+        deleteShape(selectedId);
+      }
+      if (e.key === "Escape") setSelectedId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId, editing, deleteShape, undo, redo]);
+
+  const getPoint = (e: { clientX: number; clientY: number }) => {
+    const rect = containerRef.current!.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  // Merge committed shapes with the in-progress draft.
+  const rendered: Shape[] = (() => {
+    if (!draft) return shapes;
+    const idx = shapes.findIndex((s) => s.id === draft.id);
+    if (idx === -1) return [...shapes, draft];
+    const copy = shapes.slice();
+    copy[idx] = draft;
+    return copy;
+  })();
+
+  const selected = selectedId
+    ? rendered.find((s) => s.id === selectedId) ?? null
+    : null;
+
+  const byId = new Map(rendered.map((s) => [s.id, s]));
+
+  const isBoundArrow = (s: Shape) =>
+    s.type === "arrow" && Boolean(s.fromId || s.toId);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (editing) return;
+    const p = getPoint(e);
+    svgRef.current?.setPointerCapture(e.pointerId);
+
+    if (tool === "select") {
+      if (selected && selected.type !== "text" && !isBoundArrow(selected)) {
+        const n = normalize(selected);
+        const hx = selected.type === "arrow" ? selected.x + selected.w : n.x + n.w;
+        const hy = selected.type === "arrow" ? selected.y + selected.h : n.y + n.h;
+        if (Math.hypot(p.x - hx, p.y - hy) < 12) {
+          gestureRef.current = {
+            mode: "resize",
+            startX: p.x,
+            startY: p.y,
+            orig: selected,
+          };
+          return;
+        }
+      }
+      const hit = hitTest(shapes, p.x, p.y, byId);
+      if (hit) {
+        setSelectedId(hit.id);
+        if (!isBoundArrow(hit)) {
+          gestureRef.current = {
+            mode: "move",
+            startX: p.x,
+            startY: p.y,
+            orig: hit,
+          };
+        }
+      } else {
+        setSelectedId(null);
+      }
+      return;
+    }
+
+    if (tool === "text") {
+      setSelectedId(null);
+      setEditing({ x: p.x, y: p.y });
+      setEditText("");
+      setTimeout(() => editInputRef.current?.focus(), 0);
+      return;
+    }
+
+    if (tool === "component") {
+      const stencil = stencilFor(componentVariant);
+      const shape: Shape = {
+        id: newId(),
+        type: "component",
+        x: p.x - COMPONENT_W / 2,
+        y: p.y - COMPONENT_H / 2,
+        w: COMPONENT_W,
+        h: COMPONENT_H,
+        color: stencil.color,
+        variant: stencil.variant,
+        text: stencil.label,
+      };
+      setDraft(shape);
+      setSelectedId(null);
+      gestureRef.current = { mode: "create", startX: p.x, startY: p.y };
+      return;
+    }
+
+    if (tool === "arrow") {
+      const over = hitTest(shapes, p.x, p.y, byId);
+      const fromId = over && isAnchorable(over) ? over.id : undefined;
+      setDraft({
+        id: newId(),
+        type: "arrow",
+        x: p.x,
+        y: p.y,
+        w: 0,
+        h: 0,
+        color,
+        ...(fromId ? { fromId } : {}),
+      });
+      setSelectedId(null);
+      gestureRef.current = { mode: "create", startX: p.x, startY: p.y };
+      return;
+    }
+
+    const shape: Shape = {
+      id: newId(),
+      type: TOOL_SHAPE[tool],
+      x: p.x,
+      y: p.y,
+      w: 0,
+      h: 0,
+      color,
+    };
+    setDraft(shape);
+    setSelectedId(null);
+    gestureRef.current = { mode: "create", startX: p.x, startY: p.y };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const p = getPoint(e);
+    sendCursor(p.x, p.y);
+
+    const g = gestureRef.current;
+    if (g.mode === "none") return;
+
+    if (g.mode === "create" && draftRef.current) {
+      const d = draftRef.current;
+      if (d.type === "component") {
+        setDraft({ ...d, x: p.x - d.w / 2, y: p.y - d.h / 2 });
+      } else if (d.type === "arrow") {
+        const over = hitTest(shapes, p.x, p.y, byId);
+        const toId =
+          over && isAnchorable(over) && over.id !== d.fromId
+            ? over.id
+            : undefined;
+        setLinkTargetId(toId ?? null);
+        setDraft({
+          ...d,
+          w: p.x - g.startX,
+          h: p.y - g.startY,
+          toId,
+        });
+      } else {
+        setDraft({ ...d, w: p.x - g.startX, h: p.y - g.startY });
+      }
+    } else if (g.mode === "move" && g.orig) {
+      const dx = p.x - g.startX;
+      const dy = p.y - g.startY;
+      setDraft({ ...g.orig, x: g.orig.x + dx, y: g.orig.y + dy });
+    } else if (g.mode === "resize" && g.orig) {
+      const dx = p.x - g.startX;
+      const dy = p.y - g.startY;
+      setDraft({ ...g.orig, w: g.orig.w + dx, h: g.orig.h + dy });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    svgRef.current?.releasePointerCapture(e.pointerId);
+    const g = gestureRef.current;
+    const d = draftRef.current;
+    gestureRef.current = { mode: "none", startX: 0, startY: 0 };
+
+    if (!d) return;
+
+    setLinkTargetId(null);
+
+    if (g.mode === "create") {
+      const keep =
+        d.type === "component" ||
+        Boolean(d.toId) ||
+        Math.abs(d.w) > 4 ||
+        Math.abs(d.h) > 4;
+      if (keep) {
+        const shape = d.type === "arrow" ? d : normalize(d);
+        run(
+          {
+            type: "create_shape",
+            payload: shape as unknown as Record<string, unknown>,
+          },
+          { type: "delete_shape", payload: { id: shape.id } },
+        );
+        setSelectedId(shape.id);
+      }
+    } else if (g.mode === "move" && g.orig) {
+      run(
+        { type: "move_shape", payload: { id: d.id, x: d.x, y: d.y } },
+        {
+          type: "move_shape",
+          payload: { id: d.id, x: g.orig.x, y: g.orig.y },
+        },
+      );
+    } else if (g.mode === "resize" && g.orig) {
+      const n = d.type === "arrow" ? d : normalize(d);
+      const o = g.orig;
+      run(
+        {
+          type: "resize_shape",
+          payload: { id: n.id, x: n.x, y: n.y, w: n.w, h: n.h },
+        },
+        {
+          type: "resize_shape",
+          payload: { id: o.id, x: o.x, y: o.y, w: o.w, h: o.h },
+        },
+      );
+    }
+    setDraft(null);
+  };
+
+  const commitText = () => {
+    if (!editing) return;
+    const text = editText.trim();
+    const asPayload = (s: Shape) => s as unknown as Record<string, unknown>;
+
+    if (editing.orig) {
+      const orig = editing.orig;
+      if (orig.type === "text" && !text) {
+        run(
+          { type: "delete_shape", payload: { id: orig.id } },
+          { type: "create_shape", payload: asPayload(orig) },
+        );
+      } else if (text !== (orig.text ?? "")) {
+        const updated: Shape =
+          orig.type === "text"
+            ? { ...orig, text, w: Math.max(40, text.length * 9) }
+            : { ...orig, text };
+        run(
+          { type: "create_shape", payload: asPayload(updated) },
+          { type: "create_shape", payload: asPayload(orig) },
+        );
+      }
+    } else if (text) {
+      const shape: Shape = {
+        id: newId(),
+        type: "text",
+        x: editing.x,
+        y: editing.y,
+        w: Math.max(40, text.length * 9),
+        h: 24,
+        color,
+        text,
+      };
+      run(
+        { type: "create_shape", payload: asPayload(shape) },
+        { type: "delete_shape", payload: { id: shape.id } },
+      );
+    }
+    setEditing(null);
+    setEditText("");
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    const p = getPoint(e);
+    const hit = hitTest(shapes, p.x, p.y, byId);
+    if (hit && (hit.type === "text" || hit.type === "component")) {
+      setSelectedId(hit.id);
+      const pos =
+        hit.type === "component"
+          ? { x: hit.x + 6, y: hit.y + hit.h - 26 }
+          : { x: hit.x, y: hit.y };
+      setEditing({ ...pos, id: hit.id, orig: hit });
+      setEditText(hit.text ?? "");
+      setTimeout(() => editInputRef.current?.focus(), 0);
+    }
+  };
+
+  const cursorClass =
+    tool === "select"
+      ? gestureRef.current.mode === "move"
+        ? "cursor-grabbing"
+        : "cursor-default"
+      : tool === "text"
+        ? "cursor-text"
+        : "cursor-crosshair";
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-3 py-2">
+        {TOOLS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            title={t.label}
+            aria-label={t.label}
+            aria-pressed={tool === t.id}
+            onClick={() => setTool(t.id)}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+              tool === t.id
+                ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200"
+                : "text-slate-500 hover:bg-slate-100",
+            )}
+          >
+            <t.icon size={18} />
+          </button>
+        ))}
+
+        <div className="mx-1 h-6 w-px bg-slate-200" />
+
+        {/* Colors */}
+        <div className="flex items-center gap-1">
+          {CANVAS_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={`Color ${c}`}
+              onClick={() => setColor(c)}
+              className={cn(
+                "h-5 w-5 rounded-full ring-offset-1 transition-transform hover:scale-110",
+                color === c ? "ring-2 ring-slate-400" : "ring-1 ring-slate-200",
+              )}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+
+        <div className="mx-1 h-6 w-px bg-slate-200" />
+
+        <button
+          type="button"
+          title="Delete selected"
+          aria-label="Delete selected"
+          disabled={!selectedId}
+          onClick={() => {
+            if (selectedId) deleteShape(selectedId);
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 disabled:hover:bg-transparent"
+        >
+          <IconTrash size={18} />
+        </button>
+
+        <div className="mx-1 h-6 w-px bg-slate-200" />
+
+        <button
+          type="button"
+          title="Undo (Ctrl+Z)"
+          aria-label="Undo"
+          disabled={undoStackRef.current.length === 0}
+          onClick={undo}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
+        >
+          <IconArrowBackUp size={18} />
+        </button>
+        <button
+          type="button"
+          title="Redo (Ctrl+Shift+Z)"
+          aria-label="Redo"
+          disabled={redoStackRef.current.length === 0}
+          onClick={redo}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
+        >
+          <IconArrowForwardUp size={18} />
+        </button>
+
+        <div className="ml-auto flex items-center gap-3">
+          {/* Presence */}
+          {presence.length > 0 && (
+            <div className="flex -space-x-2">
+              {presence.slice(0, 5).map((p) => (
+                <img
+                  key={p.user_id}
+                  src={avatarUrl(p.display_name)}
+                  alt={p.display_name}
+                  title={
+                    you && p.user_id === you.user_id
+                      ? `${p.display_name} (you)`
+                      : p.display_name
+                  }
+                  className="h-7 w-7 rounded-full border-2 border-white bg-brand-50"
+                />
+              ))}
+              {presence.length > 5 && (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[10px] font-semibold text-slate-500">
+                  +{presence.length - 5}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Connection status */}
+          <span
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500"
+            title={`Realtime: ${status}`}
+          >
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                status === "open" && "animate-soft-pulse bg-emerald-500",
+                status === "connecting" && "bg-amber-400",
+                (status === "closed" || status === "error") && "bg-rose-400",
+                status === "idle" && "bg-slate-300",
+              )}
+            />
+            v{version}
+          </span>
+        </div>
+      </div>
+
+      {/* Stencil rail + canvas surface */}
+      <div className="flex min-h-0 flex-1">
+        <StencilRail
+          activeVariant={tool === "component" ? componentVariant : null}
+          onPick={(v) => {
+            setComponentVariant(v);
+            setTool("component");
+            setSelectedId(null);
+          }}
+        />
+        <div
+          ref={containerRef}
+          className={cn(
+            "relative flex-1 overflow-hidden surface-dots",
+            cursorClass,
+          )}
+        >
+        <svg
+          ref={svgRef}
+          className="absolute inset-0 h-full w-full touch-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onDoubleClick={handleDoubleClick}
+        >
+          <defs>
+            {CANVAS_COLORS.map((c) => (
+              <marker
+                key={c}
+                id={`arrow-${c.replace("#", "")}`}
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M0 0L10 5L0 10z" fill={c} />
+              </marker>
+            ))}
+          </defs>
+
+          {rendered
+            .filter((s) => !(editing && editing.id === s.id && s.type === "text"))
+            .map((s) => (
+              <ShapeView
+                key={s.id}
+                shape={s}
+                selected={s.id === selectedId}
+                index={byId}
+                linked={s.id === linkTargetId}
+              />
+            ))}
+
+          {selected && <SelectionOverlay shape={selected} index={byId} />}
+        </svg>
+
+        {/* Remote cursors */}
+        {Object.entries(cursors).map(([uid, c]) => (
+          <RemoteCursorView
+            key={uid}
+            x={c.x}
+            y={c.y}
+            name={c.name}
+            color={colorForUser(uid)}
+          />
+        ))}
+
+        {/* Inline text editor */}
+        {editing && (
+          <input
+            ref={editInputRef}
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onBlur={commitText}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitText();
+              if (e.key === "Escape") {
+                setEditing(null);
+                setEditText("");
+              }
+            }}
+            placeholder="Type…"
+            className="absolute z-20 min-w-[120px] rounded border border-brand-300 bg-white/95 px-1.5 py-0.5 text-base shadow-sm outline-none"
+            style={{ left: editing.x, top: editing.y, color }}
+          />
+        )}
+
+        {/* Empty hint */}
+        {rendered.length === 0 && !editing && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+            <p className="font-semibold text-slate-500">
+              Your canvas is live — start designing
+            </p>
+            <p className="max-w-xs text-sm text-slate-400">
+              Drop system-design components from the left rail, then connect them
+              with arrows. Everything syncs and persists in real time.
+            </p>
+          </div>
+        )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShapeView({
+  shape,
+  selected,
+  index,
+  linked,
+}: {
+  shape: Shape;
+  selected: boolean;
+  index: Map<string, Shape>;
+  linked: boolean;
+}) {
+  const sw = selected ? 3 : 2.5;
+  if (shape.type === "rect") {
+    const n = normalize(shape);
+    return (
+      <rect
+        x={n.x}
+        y={n.y}
+        width={n.w}
+        height={n.h}
+        rx={8}
+        fill={`${shape.color}14`}
+        stroke={shape.color}
+        strokeWidth={sw}
+      />
+    );
+  }
+  if (shape.type === "ellipse") {
+    const n = normalize(shape);
+    return (
+      <ellipse
+        cx={n.x + n.w / 2}
+        cy={n.y + n.h / 2}
+        rx={n.w / 2}
+        ry={n.h / 2}
+        fill={`${shape.color}14`}
+        stroke={shape.color}
+        strokeWidth={sw}
+      />
+    );
+  }
+  if (shape.type === "arrow") {
+    const { x1, y1, x2, y2 } = resolveArrow(shape, index);
+    return (
+      <line
+        x1={x1}
+        y1={y1}
+        x2={x2}
+        y2={y2}
+        stroke={shape.color}
+        strokeWidth={sw}
+        strokeLinecap="round"
+        markerEnd={`url(#arrow-${shape.color.replace("#", "")})`}
+      />
+    );
+  }
+  if (shape.type === "component") {
+    const n = normalize(shape);
+    const stencil = stencilFor(shape.variant);
+    const Icon = stencil.icon;
+    return (
+      <g>
+        {linked && (
+          <rect
+            x={n.x - 4}
+            y={n.y - 4}
+            width={n.w + 8}
+            height={n.h + 8}
+            rx={14}
+            fill="none"
+            stroke="#22d3ee"
+            strokeWidth={3}
+          />
+        )}
+        <rect
+          x={n.x}
+          y={n.y}
+          width={n.w}
+          height={n.h}
+          rx={12}
+          fill="white"
+          stroke={shape.color}
+          strokeWidth={sw}
+        />
+        <rect
+          x={n.x}
+          y={n.y}
+          width={n.w}
+          height={n.h}
+          rx={12}
+          fill={`${shape.color}0f`}
+        />
+        <foreignObject
+          x={n.x}
+          y={n.y}
+          width={n.w}
+          height={n.h}
+          style={{ pointerEvents: "none" }}
+        >
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-2 text-center">
+            <Icon size={26} color={shape.color} stroke={1.8} />
+            <span className="text-[11px] font-semibold leading-tight text-slate-700">
+              {shape.text}
+            </span>
+          </div>
+        </foreignObject>
+      </g>
+    );
+  }
+  return (
+    <text
+      x={shape.x}
+      y={shape.y}
+      dominantBaseline="hanging"
+      className="select-none"
+      fontSize={18}
+      fontWeight={600}
+      fill={shape.color}
+    >
+      {shape.text}
+    </text>
+  );
+}
+
+function SelectionOverlay({
+  shape,
+  index,
+}: {
+  shape: Shape;
+  index: Map<string, Shape>;
+}) {
+  const boundArrow = shape.type === "arrow" && Boolean(shape.fromId || shape.toId);
+  let x: number;
+  let y: number;
+  let w: number;
+  let h: number;
+  let handleX: number;
+  let handleY: number;
+  if (shape.type === "arrow") {
+    const { x1, y1, x2, y2 } = resolveArrow(shape, index);
+    x = Math.min(x1, x2);
+    y = Math.min(y1, y2);
+    w = Math.abs(x2 - x1);
+    h = Math.abs(y2 - y1);
+    handleX = x2;
+    handleY = y2;
+  } else {
+    const n = normalize(shape);
+    x = n.x;
+    y = n.y;
+    w = shape.type === "text" ? Math.max(n.w, 40) : n.w;
+    h = shape.type === "text" ? Math.max(n.h, 22) : n.h;
+    handleX = x + w;
+    handleY = y + h;
+  }
+  const showHandle = shape.type !== "text" && !boundArrow;
+  return (
+    <g className="pointer-events-none">
+      <rect
+        x={x - 5}
+        y={y - 5}
+        width={w + 10}
+        height={h + 10}
+        fill="none"
+        stroke="#0d9488"
+        strokeWidth={1.5}
+        strokeDasharray="5 4"
+        rx={6}
+      />
+      {showHandle && (
+        <rect
+          x={handleX - 5}
+          y={handleY - 5}
+          width={10}
+          height={10}
+          fill="white"
+          stroke="#0d9488"
+          strokeWidth={1.5}
+          rx={2}
+        />
+      )}
+    </g>
+  );
+}
+
+function RemoteCursorView({
+  x,
+  y,
+  name,
+  color,
+}: {
+  x: number;
+  y: number;
+  name: string;
+  color: string;
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute z-10 -translate-y-1 transition-transform duration-75"
+      style={{ left: x, top: y }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 3l5.5 15 2.3-6.2 6.2-2.3L5 3z"
+          fill={color}
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span
+        className="ml-3 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium text-white shadow-sm"
+        style={{ backgroundColor: color }}
+      >
+        {name}
+      </span>
+    </div>
+  );
+}
+
+function StencilRail({
+  activeVariant,
+  onPick,
+}: {
+  activeVariant: ComponentVariant | null;
+  onPick: (v: ComponentVariant) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? STENCILS.filter(
+        (s) =>
+          s.label.toLowerCase().includes(q) || s.variant.includes(q),
+      )
+    : STENCILS;
+
+  return (
+    <div className="flex w-[100px] shrink-0 flex-col border-r border-slate-200 bg-white">
+      <div className="sticky top-0 z-10 space-y-1.5 bg-white px-2 pb-1.5 pt-2">
+        <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          Components
+        </span>
+        <div className="relative">
+          <IconSearch
+            size={13}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
+            className="w-full rounded-md border border-slate-200 bg-slate-50 py-1 pl-6 pr-1.5 text-xs text-slate-700 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-1.5 pb-3">
+        {filtered.map((s) => {
+          const Icon = s.icon;
+          const active = activeVariant === s.variant;
+          return (
+            <button
+              key={s.variant}
+              type="button"
+              title={`Add ${s.label}`}
+              aria-pressed={active}
+              onClick={() => onPick(s.variant)}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors",
+                active
+                  ? "border-brand-300 bg-brand-50"
+                  : "border-transparent hover:bg-slate-50",
+              )}
+            >
+              <Icon size={20} color={s.color} stroke={1.8} />
+              <span className="text-[10px] font-medium leading-tight text-slate-600">
+                {s.label}
+              </span>
+            </button>
+          );
+        })}
+        {filtered.length === 0 && (
+          <p className="px-1 pt-3 text-center text-[10px] text-slate-400">
+            No components match “{query}”.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

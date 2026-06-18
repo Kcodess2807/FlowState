@@ -1,0 +1,49 @@
+# Local development stack for FlowState.
+#
+# Run from the repository root:
+#   docker compose -f infra/docker-compose.yml up --build
+#
+# The backend build context is ../backend; the repo-root .env supplies config
+# for both services.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: flowstate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-flowstate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flowstate}
+      POSTGRES_DB: ${POSTGRES_DB:-flowstate}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - flowstate_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-flowstate} -d ${POSTGRES_DB:-flowstate}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: flowstate-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      # Override host so the app reaches Postgres over the compose network,
+      # regardless of what .env sets for host-based runs.
+      POSTGRES_HOST: db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  flowstate_pgdata:

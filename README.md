@@ -116,10 +116,10 @@ through diagrams, implementation phases, and iterative engineering.
 # Tech Stack
 
 ## Frontend
-- React + Vite
-- Zustand
-- Konva.js
-- Native WebSockets
+- React + Vite + TypeScript
+- Tailwind CSS + Framer Motion
+- React Router
+- Native WebSockets (realtime canvas)
 
 ---
 
@@ -145,6 +145,76 @@ through diagrams, implementation phases, and iterative engineering.
 - Ruff
 - MyPy
 - Pytest
+
+---
+
+# Getting Started
+
+## Prerequisites
+- Docker + Docker Compose (for the database, and optionally the backend)
+- Python 3.12+ (to run the backend on your host)
+- Node.js 18+ and npm (for the frontend)
+
+## 1. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+This root `.env` configures the docker-compose stack. Set a real `SECRET_KEY`:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+The backend's defaults (`app/core/config.py`) already point at
+`localhost:5432` with the `flowstate` / `flowstate` credentials the compose
+Postgres uses, so running it on your host needs no extra config. To override,
+create a `backend/.env`.
+
+## 2. Start the database
+
+```bash
+docker compose -f infra/docker-compose.yml up -d db
+```
+
+This brings up Postgres 16 on port `5432` with the credentials from `.env`.
+
+## 3. Run the backend
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+alembic upgrade head               # apply migrations
+uvicorn app.main:app --reload      # http://localhost:8000
+```
+
+API docs are served at `http://localhost:8000/docs`.
+
+> Prefer containers? `docker compose -f infra/docker-compose.yml up --build`
+> runs Postgres and the backend together (it reads the root `.env`). Apply
+> migrations once it's up with
+> `docker compose -f infra/docker-compose.yml exec backend alembic upgrade head`.
+
+## 4. Run the frontend
+
+```bash
+cd frontend
+npm install
+cp .env.example .env                # VITE_API_BASE_URL defaults to the local API
+npm run dev                         # http://localhost:5173
+```
+
+The dev server expects the backend at `http://localhost:8000`. CORS is already
+configured for `localhost:5173`.
+
+## 5. Use it
+
+Open `http://localhost:5173`, create an account, and open a problem to start
+designing on the realtime canvas. Open the same problem in a second browser to
+watch operations, presence, and cursors sync live.
 
 ---
 
