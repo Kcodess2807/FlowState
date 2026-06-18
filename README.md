@@ -1,408 +1,147 @@
 # FlowState
 
-> A backend-first realtime collaborative whiteboard engineered to deeply explore synchronization systems, event-driven architecture, replay engines, and scalable realtime backend design.
+> A backend-first realtime collaborative whiteboard, built to explore synchronization, event-driven architecture, replay engines, and scalable realtime backend design.
+
+FlowState is a production-style collaborative whiteboard built primarily as a systems / backend architecture project. The interesting part isn't the drawing surface — it's the engine underneath: an immutable, backend-ordered operation log with deterministic replay, snapshots, version history, and live multi-user sync.
 
 ---
 
-# Overview
+## Status
 
-FlowState is a production-style collaborative whiteboard platform built primarily as a systems engineering and backend architecture project.
+**Phase 1 (MVP backend) is complete and tested end to end.** The whole collaboration engine works: auth, role-based access, the operation log, realtime WebSocket sync, snapshot/replay reconstruction, version control, and undo/redo.
 
-Unlike traditional canvas applications focused mainly on frontend interactions, FlowState is designed around the complexities of:
-- realtime synchronization
-- operation ordering
-- replayable event systems
-- websocket orchestration
-- snapshot-based recovery
-- deterministic state reconstruction
-- collaborative distributed systems
-
-The project follows a system-design-first approach where architecture, lifecycle modeling, persistence strategies, and failure handling are planned extensively before implementation.
+The frontend (React + Konva) is the next milestone and is not built yet — today the system is exercised over its REST + WebSocket API.
 
 ---
 
-# Vision
+## What's built
 
-FlowState aims to simulate how collaborative platforms like:
-- Figma
-- Excalidraw
-- Miro
-- Notion multiplayer systems
+**Accounts & access**
+- JWT auth with separate access and refresh tokens
+- Workspaces with role-based membership (`viewer` / `editor` / `owner`)
+- Multi-canvas workspaces; access inherited from workspace membership
 
-manage:
-- concurrent collaboration
-- realtime state synchronization
-- operation replay
-- recovery after failures
-- scalable room-based architectures
+**Collaboration engine**
+- Immutable, append-only operation log per canvas
+- Backend-authoritative version ordering (gap-free, monotonic, holds under concurrent writers)
+- Idempotent commits via client-supplied operation ids (safe retries / reconnects)
+- Snapshot + replay state reconstruction, with time-travel to any version
+- Periodic automatic snapshots to bound replay cost
 
-while remaining intentionally backend-first.
+**Realtime**
+- Per-canvas WebSocket rooms with live operation broadcast
+- Presence (who's here) and cursor sharing
+- Reconnect recovery: a reconnecting client replays only what it missed
+- Heartbeat-based cleanup of dead connections
 
----
+**Version control & history**
+- Named checkpoints (git-tag style) over the operation log
+- Shape-level diff between any two versions
+- Immutable restore (restoring appends forward operations; history is never rewritten)
+- Per-user undo/redo via inverse operations
 
-# Core Architectural Principles
-
-## Backend-Authoritative Synchronization
-The backend acts as the single source of truth for all collaborative state.
-
----
-
-## Operation-Based Collaboration
-Instead of transmitting full canvas states, every committed user action is represented as an immutable operation.
-
-Examples:
-- create_shape
-- move_shape
-- resize_shape
-- delete_shape
+**Activity**
+- GitHub/LeetCode-style contribution heatmap: per-day counts, totals, current and longest streaks
 
 ---
 
-## Mutable Live State + Immutable History
-FlowState separates:
-- current mutable canvas state
-- immutable operation history
+## Architecture & key design decisions
 
-allowing:
-- deterministic replay
-- recovery
-- undo/redo
-- version history
-- auditing
+These are the choices the project is really about.
 
----
+**Backend-authoritative ordering.** Clients never choose version numbers. Each canvas has a counter incremented with `UPDATE ... RETURNING` inside the same transaction as the operation insert. The row lock serializes concurrent committers, so every canvas gets a single total order with no gaps or duplicates — verified by firing parallel commits and checking the result.
 
-## Snapshot + Replay Recovery
-Canvas state reconstruction uses:
-- periodic snapshots
-- replay of operations after snapshot version
+**Operations are immutable events.** Every committed action is one append-only row. Nothing is ever updated or deleted. That single rule is what makes deterministic replay, undo/redo, version history, and recovery all possible from the same data.
 
-This enables efficient recovery and scalable synchronization.
+**Snapshot + replay.** Current state is reconstructed as `nearest snapshot + replay of the operations after it`, instead of replaying the whole log every time. The reducer is a pure, I/O-free function, so reconstruction is deterministic and `?at=<version>` gives free time-travel. Snapshots are derived data — they only bound cost, they're never a source of truth.
+
+**Immutable restore & undo.** Restoring to an old version doesn't rewind history — it diffs current vs. target and appends new forward operations to reach it. Undo appends the *inverse* of an operation. So "undo" and "restore" are themselves recorded events you can later replay or undo again. Per-user undo/redo stacks are rebuilt from the log on demand rather than stored as mutable state.
+
+**One write path.** REST commits, WebSocket commits, restore, and undo/redo all flow through a single commit-and-broadcast function, so every connected client converges regardless of how an operation entered the system.
+
+**Access checks don't leak existence.** Non-members receive `404`, not `403`, so workspace and canvas ids can't be probed.
 
 ---
 
-# System Design First Development
+## Tech stack
 
-FlowState is intentionally being developed using a:
-
-## system-design-first engineering approach
-
-Before implementation, the project architecture was deeply planned through:
-- synchronization diagrams
-- websocket lifecycle flows
-- replay reconstruction models
-- failure recovery systems
-- state ownership boundaries
-- persistence strategies
-- operation lifecycle diagrams
-- version ordering systems
-- room architecture planning
-
-The repository is designed not only as an application codebase, but also as:
-
-> a public backend systems engineering case study.
-
-The goal is to document:
-- architectural tradeoffs
-- distributed systems thinking
-- realtime synchronization patterns
-- persistence design
-- scalability evolution
-
-through diagrams, implementation phases, and iterative engineering.
+- **API:** FastAPI, Pydantic v2
+- **Database:** PostgreSQL, SQLAlchemy 2 (async / asyncpg), Alembic migrations, JSONB operation/snapshot storage
+- **Auth:** PyJWT, bcrypt
+- **Realtime:** native WebSockets, in-memory room manager
+- **Infra:** Docker, Docker Compose
 
 ---
 
-# Tech Stack
+## Getting started
 
-## Frontend
-- React + Vite + TypeScript
-- Tailwind CSS + Framer Motion
-- React Router
-- Native WebSockets (realtime canvas)
-
----
-
-## Backend
-- FastAPI
-- SQLAlchemy 2 Async
-- Pydantic v2
-- JWT Authentication
-- WebSocket Room Manager
-
----
-
-## Database
-- PostgreSQL
-- JSONB operation storage
-- Alembic migrations
-
----
-
-## Infrastructure & Tooling
-- Docker
-- Docker Compose
-- Ruff
-- MyPy
-- Pytest
-
----
-
-# Getting Started
-
-## Prerequisites
-- Docker + Docker Compose (for the database, and optionally the backend)
-- Python 3.12+ (to run the backend on your host)
-- Node.js 18+ and npm (for the frontend)
-
-## 1. Configure environment
+Requirements: Docker and Docker Compose.
 
 ```bash
+# 1. configure environment
 cp .env.example .env
-```
-
-This root `.env` configures the docker-compose stack. Set a real `SECRET_KEY`:
-
-```bash
+# set a real SECRET_KEY in .env:
 python -c "import secrets; print(secrets.token_urlsafe(64))"
+
+# 2. start Postgres + the API
+docker compose -f infra/docker-compose.yml up -d --build
+
+# 3. apply database migrations
+docker exec flowstate-backend alembic upgrade head
 ```
 
-The backend's defaults (`app/core/config.py`) already point at
-`localhost:5432` with the `flowstate` / `flowstate` credentials the compose
-Postgres uses, so running it on your host needs no extra config. To override,
-create a `backend/.env`.
+The API is then at `http://localhost:8000`, with interactive docs at `http://localhost:8000/docs`.
 
-## 2. Start the database
-
-```bash
-docker compose -f infra/docker-compose.yml up -d db
-```
-
-This brings up Postgres 16 on port `5432` with the credentials from `.env`.
-
-## 3. Run the backend
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-alembic upgrade head               # apply migrations
-uvicorn app.main:app --reload      # http://localhost:8000
-```
-
-API docs are served at `http://localhost:8000/docs`.
-
-> Prefer containers? `docker compose -f infra/docker-compose.yml up --build`
-> runs Postgres and the backend together (it reads the root `.env`). Apply
-> migrations once it's up with
-> `docker compose -f infra/docker-compose.yml exec backend alembic upgrade head`.
-
-## 4. Run the frontend
-
-```bash
-cd frontend
-npm install
-cp .env.example .env                # VITE_API_BASE_URL defaults to the local API
-npm run dev                         # http://localhost:5173
-```
-
-The dev server expects the backend at `http://localhost:8000`. CORS is already
-configured for `localhost:5173`.
-
-## 5. Use it
-
-Open `http://localhost:5173`, create an account, and open a problem to start
-designing on the realtime canvas. Open the same problem in a second browser to
-watch operations, presence, and cursors sync live.
+Health checks: `GET /api/v1/health` (liveness) and `GET /api/v1/health/db` (database).
 
 ---
 
-# Core Backend Primitives
+## API overview
 
-The collaboration engine is built around a small set of core primitives:
+All routes are under `/api/v1`.
 
-- websocket_room
-- operation
-- operation_log
-- version_counter
-- snapshot
-- replay_engine
-- presence
-- room_manager
+| Area | Endpoint | Notes |
+| --- | --- | --- |
+| Auth | `POST /auth/register` · `POST /auth/login` · `POST /auth/refresh` · `GET /auth/me` | access + refresh tokens |
+| Workspaces | `POST/GET /workspaces` · `GET /workspaces/{id}` | |
+| Members | `GET/POST /workspaces/{id}/members` | add requires `owner` |
+| Canvases | `POST/GET /workspaces/{id}/canvases` · `GET /canvases/{id}` | create requires `editor` |
+| Operations | `POST /canvases/{id}/operations` · `GET /canvases/{id}/operations?since=` | commit requires `editor` |
+| State | `GET /canvases/{id}/state?at=` | reconstructed via snapshot + replay |
+| Snapshots | `POST/GET /canvases/{id}/snapshots` | |
+| Versions | `POST/GET /canvases/{id}/versions` · `GET /canvases/{id}/diff?from=&to=` · `POST /canvases/{id}/restore` | |
+| Undo/redo | `POST /canvases/{id}/undo` · `POST /canvases/{id}/redo` | per-user |
+| Activity | `GET /me/activity` · `GET /users/{id}/activity` | optional `?year=` |
+| Realtime | `WS /canvases/{id}/ws?token=&since=` | sync, broadcast, presence, cursors |
 
-These primitives form the foundation of the realtime synchronization architecture.
+### WebSocket protocol (brief)
 
----
-
-# System Design Highlights
-
-## Realtime Collaboration
-- Canvas-based websocket rooms
-- Live operation broadcasting
-- Presence synchronization
-- Heartbeat-based cleanup
-- Reconnect recovery
+Client → server: `operation`, `cursor`, `ping`.
+Server → client: `sync` (initial state + presence + missed ops), `operation`, `presence_join` / `presence_leave`, `cursor`, `pong`, `error`.
 
 ---
 
-## Persistence Engine
-- Immutable operation logs
-- Monotonic version ordering
-- Snapshot generation
-- Replay reconstruction engine
+## Data model
+
+- **User** — account + credentials
+- **Workspace** / **WorkspaceMember** — ownership container + role-based membership
+- **Canvas** — a collaborative surface; holds the monotonic version counter
+- **Operation** — one immutable entry in the canvas log (with optional `undo_of` link)
+- **Snapshot** — materialized canvas state at a version (derived, rebuildable)
+- **CanvasVersion** — a named checkpoint pointing at a version
 
 ---
 
-## Synchronization Model
-- Backend-authoritative ordering
-- Deterministic replay
-- Transient vs persistent state separation
-- Committed vs non-committed operations
+## Roadmap
+
+**Phase 1 — MVP (done):** auth, workspaces, multi-canvas, operation log, WebSocket sync, snapshots, replay reconstruction, reconnect recovery, undo/redo, basic permissions. Plus version control and a contribution heatmap.
+
+**Phase 2 — Alpha:** React + Konva frontend, more shapes/tools, canvas export, Redis pub/sub for multi-instance rooms, snapshot tuning.
+
+**Phase 3 — Beta:** workspace invites, advanced RBAC, comments, analytics dashboards, observability, rate limiting, cloud deployment.
 
 ---
 
-# Launch Roadmap
+## Philosophy
 
-# Phase 1 — MVP
-
-The MVP focuses on validating the core realtime collaboration architecture.
-
-## Features
-- User authentication
-- Workspace creation
-- Multi-canvas architecture
-- Rectangle rendering and movement
-- Native WebSocket synchronization
-- In-memory room manager
-- Operation persistence
-- Snapshot generation
-- Replay reconstruction
-- Reconnect recovery
-- Undo/redo via inverse operations
-- Presence cursors
-- Basic permissions system
-
----
-
-## MVP Goals
-- Stable realtime collaboration
-- Clean synchronization architecture
-- Replayable operation system
-- Deterministic canvas reconstruction
-- Backend lifecycle correctness
-
----
-
-## MVP Constraints
-- Single backend instance
-- No Redis initially
-- No CRDTs
-- No offline synchronization
-- No distributed scaling yet
-
-The focus is architecture correctness over infrastructure scale.
-
----
-
-# Phase 2 — Alpha
-
-The Alpha phase expands collaborative robustness and introduces distributed synchronization improvements.
-
-## Features
-- Additional shapes and tools
-- Selection synchronization
-- Canvas export (PNG/SVG)
-- Canvas version history
-- Time-travel replay
-- Redis pub/sub integration
-- Distributed websocket synchronization
-- Better snapshot optimization
-- Activity tracking
-- Enhanced room lifecycle handling
-
----
-
-## Alpha Goals
-- Multi-instance backend support
-- Better replay performance
-- Improved persistence throughput
-- Scalable room synchronization
-- Reduced synchronization latency
-
----
-
-# Phase 3 — Beta
-
-The Beta phase focuses on production-grade collaboration workflows and extensibility.
-
-## Features
-- Workspace sharing and invites
-- Advanced RBAC permissions
-- Collaborative comments
-- Multiplayer cursor enhancements
-- Analytics dashboards
-- Mermaid diagram import/export
-- Plugin-ready architecture
-- Observability and monitoring
-- Rate limiting and abuse protection
-- Cloud deployment pipeline
-
----
-
-## Beta Goals
-- Horizontally scalable infrastructure
-- Production-grade observability
-- Extensible collaboration engine
-- Advanced recovery systems
-- Cloud-native deployment readiness
-
----
-
-# Engineering Concepts Explored
-
-FlowState explores several advanced backend and systems engineering concepts:
-
-- Realtime systems
-- Event-driven architecture
-- WebSocket lifecycle management
-- Replay engines
-- Snapshot recovery systems
-- Distributed systems fundamentals
-- Presence systems
-- Operation versioning
-- Deterministic synchronization
-- State ownership boundaries
-- Failure recovery strategies
-- Scalability evolution
-
----
-
-# Future Exploration Areas
-
-Potential future directions:
-- CRDT experimentation
-- Offline-first synchronization
-- AI-assisted diagram generation
-- Collaborative voice/video layers
-- Distributed replay workers
-- Event-streaming infrastructure
-- Full plugin ecosystem
-
----
-
-# Project Philosophy
-
-FlowState is intentionally designed as:
-
-> a systems engineering project disguised as a collaborative whiteboard platform.
-
-The primary goal is not merely building a drawing application, but deeply understanding:
-- realtime architecture
-- synchronization systems
-- persistence models
-- replay engines
-- distributed collaboration
-- scalable backend design
-
-through practical implementation and iterative systems engineering.
+FlowState is deliberately a systems engineering project disguised as a whiteboard. The goal is to understand realtime synchronization, persistence models, replay engines, and deterministic state reconstruction by actually building them.
