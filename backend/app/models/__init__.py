@@ -3,6 +3,7 @@ from app.models.canvas import Canvas
 from app.models.operation import Operation, OperationType
 from app.models.problem import Difficulty, Problem, problem_topics
 from app.models.snapshot import Snapshot
+from app.models.submission import Evaluation, Submission
 from app.models.topic import Topic
 from app.models.user import User
 from app.models.version import CanvasVersion
@@ -23,4 +24,6 @@ __all__ = [
     "Problem",
     "Difficulty",
     "problem_topics",
+    "Submission",
+    "Evaluation",
 ]

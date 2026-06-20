@@ -6,12 +6,10 @@ import {
   IconDeviceFloppy,
   IconLoader2,
   IconLock,
-  IconUsers,
 } from "@tabler/icons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Accordion } from "@/components/ui/accordion";
 import { DifficultyBadge } from "@/components/shared/DifficultyBadge";
 import { FlowCanvas } from "@/components/canvas/FlowCanvas";
 import { useAuth } from "@/context/AuthContext";
@@ -22,7 +20,6 @@ import {
   submitSolution,
 } from "@/lib/api";
 import type { Problem } from "@/types";
-import { formatCount } from "@/lib/utils";
 
 export default function ProblemDetail() {
   const { slug = "" } = useParams();
@@ -39,11 +36,17 @@ export default function ProblemDetail() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getProblem(slug).then((p) => {
-      if (!active) return;
-      setProblem(p ?? null);
-      setLoading(false);
-    });
+    getProblem(slug)
+      .then((p) => {
+        if (!active) return;
+        setProblem(p);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setProblem(null);
+        setLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -122,64 +125,56 @@ export default function ProblemDetail() {
 
       <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-0 lg:grid-cols-[2fr_3fr]">
         <div className="border-hairline px-4 py-8 sm:px-6 lg:border-r lg:px-8">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <DifficultyBadge difficulty={problem.difficulty} />
-            <span className="inline-flex items-center gap-1.5 text-sm text-ink-faint">
-              <IconUsers size={15} />
-              {formatCount(problem.solveCount)} solved
-            </span>
-          </div>
-
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ink">
-            {problem.title}
-          </h1>
-
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {problem.tags.map((tag) => (
-              <Badge key={tag} variant="neutral">
-                {tag}
+            {!problem.is_published && <Badge variant="hard">Draft</Badge>}
+            {problem.topics.map((t) => (
+              <Badge key={t.id} variant="neutral">
+                {t.name}
               </Badge>
             ))}
           </div>
 
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+            {problem.title}
+          </h1>
+
           <section className="mt-7">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-ink-faint">
+            <h2 className="mono text-xs uppercase tracking-[0.18em] text-accent">
               Problem
             </h2>
-            <p className="mt-2 leading-relaxed text-ink-muted">
-              {problem.statement}
+            <p className="mt-3 whitespace-pre-line leading-relaxed text-ink-muted">
+              {problem.description}
             </p>
           </section>
 
-          <section className="mt-7">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-ink-faint">
-              Constraints
-            </h2>
-            <ul className="mt-3 space-y-2">
-              {problem.constraints.map((c) => (
-                <li
-                  key={c}
-                  className="flex items-start gap-2.5 text-sm text-ink-muted"
-                >
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                  {c}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="mt-7">
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-faint">
-              Hints
-            </h2>
-            <Accordion
-              items={problem.hints.map((h, i) => ({
-                id: `hint-${i}`,
-                title: `Hint ${i + 1}`,
-                content: h,
-              }))}
-            />
-          </section>
+          {problem.rubric.length > 0 && (
+            <section className="mt-8">
+              <h2 className="mono text-xs uppercase tracking-[0.18em] text-accent">
+                You'll be graded on
+              </h2>
+              <ul className="mt-3 space-y-2.5">
+                {problem.rubric.map((c) => (
+                  <li
+                    key={c.key}
+                    className="rounded-lg border border-hairline bg-elevated p-3.5"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold text-ink">{c.title}</span>
+                      <span className="mono shrink-0 rounded-full border border-hairline bg-surface px-2 py-0.5 text-[11px] text-ink-muted">
+                        {c.weight}%
+                      </span>
+                    </div>
+                    {c.description && (
+                      <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
+                        {c.description}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
 
         <div

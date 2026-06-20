@@ -18,12 +18,12 @@ import { useAuth } from "@/context/AuthContext";
 import { ContributionHeatmap } from "@/components/shared/ContributionHeatmap";
 import { getMyActivity, getProblems, getSolutions } from "@/lib/api";
 import type { ActivitySummary } from "@/lib/api";
-import type { Problem, Solution } from "@/types";
+import type { ProblemListItem, Solution } from "@/types";
 import { formatCount, todayLong } from "@/lib/utils";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [problems, setProblems] = useState<Problem[]>([]);
+  const [problems, setProblems] = useState<ProblemListItem[]>([]);
   const [highlights, setHighlights] = useState<Solution[]>([]);
   const [activity, setActivity] = useState<ActivitySummary | null>(null);
 
@@ -118,15 +118,17 @@ export default function Dashboard() {
               </h2>
               <div className="mt-5 flex flex-col items-start justify-between gap-4 rounded-2xl border border-accent/25 bg-accent/[0.06] p-6 sm:flex-row sm:items-center">
                 <div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <span className="font-bold text-ink">
                       {lastAttempted.title}
                     </span>
                     <DifficultyBadge difficulty={lastAttempted.difficulty} />
                   </div>
-                  <p className="mt-1 max-w-xl text-sm text-ink-muted">
-                    {lastAttempted.summary}
-                  </p>
+                  {lastAttempted.topics.length > 0 && (
+                    <p className="mono mt-1.5 text-xs text-ink-muted">
+                      {lastAttempted.topics.map((t) => t.name).join(" · ")}
+                    </p>
+                  )}
                 </div>
                 <Button asChild>
                   <Link to={`/problems/${lastAttempted.slug}`}>

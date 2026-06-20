@@ -1,55 +1,63 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { IconSearch } from "@tabler/icons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
 import { ProblemRow } from "@/components/shared/ProblemRow";
 import { Input } from "@/components/ui/input";
 import { FadeIn } from "@/components/shared/FadeIn";
-import { getProblems } from "@/lib/api";
-import { ALL_TAGS } from "@/lib/mock-data";
-import type { Difficulty, Problem } from "@/types";
+import { getProblems, getTopics } from "@/lib/api";
+import type { Difficulty, ProblemListItem, Topic } from "@/types";
 import { cn } from "@/lib/utils";
 
-const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
+const DIFFICULTIES: { label: string; value: Difficulty }[] = [
+  { label: "Easy", value: "easy" },
+  { label: "Medium", value: "medium" },
+  { label: "Hard", value: "hard" },
+];
 
 export default function Problems() {
-  const [problems, setProblems] = useState<Problem[]>([]);
+  const [problems, setProblems] = useState<ProblemListItem[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
 
   useEffect(() => {
-    getProblems().then((p) => {
-      setProblems(p);
-      setLoading(false);
-    });
+    getTopics()
+      .then(setTopics)
+      .catch(() => setTopics([]));
   }, []);
 
-  const filtered = useMemo(() => {
-    return problems.filter((p) => {
-      if (difficulty && p.difficulty !== difficulty) return false;
-      if (activeTag && !p.tags.includes(activeTag)) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !p.title.toLowerCase().includes(q) &&
-          !p.summary.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      return true;
-    });
-  }, [problems, difficulty, activeTag, search]);
+  // Server-side filtering; search is debounced so we don't refetch per keystroke.
+  useEffect(() => {
+    setLoading(true);
+    const handle = setTimeout(() => {
+      getProblems({
+        difficulty: difficulty ?? undefined,
+        topic: activeTopic ?? undefined,
+        search: search.trim() || undefined,
+      })
+        .then((p) => {
+          setProblems(p);
+          setLoading(false);
+        })
+        .catch(() => {
+          setProblems([]);
+          setLoading(false);
+        });
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [difficulty, activeTopic, search]);
 
   return (
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         <FadeIn>
-          <span className="text-sm font-semibold uppercase tracking-widest text-accent">
+          <span className="mono text-xs uppercase tracking-[0.2em] text-accent">
             Practice
           </span>
-          <h1 className="relative mt-2 inline-block text-4xl font-extrabold tracking-tight text-ink">
+          <h1 className="relative mt-3 inline-block text-4xl font-bold tracking-tight text-ink">
             Problems
             <DoodleUnderline className="-bottom-3" />
           </h1>
@@ -77,44 +85,48 @@ export default function Problems() {
               <div className="flex items-center gap-1.5">
                 {DIFFICULTIES.map((d) => (
                   <button
-                    key={d}
+                    key={d.value}
                     type="button"
                     onClick={() =>
-                      setDifficulty((cur) => (cur === d ? null : d))
+                      setDifficulty((cur) => (cur === d.value ? null : d.value))
                     }
                     className={cn(
                       "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
-                      difficulty === d
-                        ? "border-accent bg-accent/10 text-accent"
-                        : "border-hairline text-ink-muted hover:border-accent/40",
+                      difficulty === d.value
+                        ? "border-accent/40 bg-accent/10 text-accent"
+                        : "border-hairline text-ink-muted hover:border-hairline-strong",
                     )}
                   >
-                    {d}
+                    {d.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                Tags
-              </span>
-              {ALL_TAGS.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => setActiveTag((cur) => (cur === tag ? null : tag))}
-                  className={cn(
-                    "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
-                    activeTag === tag
-                      ? "border-cyan-300 bg-cyan-50 text-cyan-700"
-                      : "border-hairline text-ink-muted hover:border-accent/40",
-                  )}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
+            {topics.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="mono text-xs uppercase tracking-wide text-ink-faint">
+                  Topics
+                </span>
+                {topics.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() =>
+                      setActiveTopic((cur) => (cur === t.slug ? null : t.slug))
+                    }
+                    className={cn(
+                      "mono rounded-full border px-2.5 py-0.5 text-xs transition-colors",
+                      activeTopic === t.slug
+                        ? "border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan"
+                        : "border-hairline text-ink-muted hover:border-hairline-strong",
+                    )}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </FadeIn>
 
@@ -129,20 +141,20 @@ export default function Problems() {
                 </div>
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : problems.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="divide-y divide-hairline">
-              {filtered.map((p) => (
+              {problems.map((p) => (
                 <ProblemRow key={p.id} problem={p} />
               ))}
             </div>
           )}
         </div>
 
-        {!loading && filtered.length > 0 && (
-          <p className="mt-4 text-center text-sm text-ink-faint">
-            Showing {filtered.length} of {problems.length} problems
+        {!loading && problems.length > 0 && (
+          <p className="mono mt-4 text-center text-sm text-ink-faint">
+            {problems.length} problem{problems.length === 1 ? "" : "s"}
           </p>
         )}
       </div>
@@ -173,7 +185,7 @@ function EmptyState() {
         />
       </svg>
       <h3 className="mt-4 font-semibold text-ink-muted">No problems match</h3>
-      <p className="mt-1 text-sm text-ink-muted">
+      <p className="mt-1 text-sm text-ink-faint">
         Try clearing a filter or searching for something else.
       </p>
     </div>

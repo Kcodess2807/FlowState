@@ -1,10 +1,13 @@
-import type { Problem, Profile, Solution } from "@/types";
+import type { Profile, Solution } from "@/types";
 
 /** Stable avatar helper (DiceBear, no network key required). */
 const avatar = (seed: string) =>
   `https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=ccfbf1`;
 
-export const MOCK_PROBLEMS: Problem[] = [
+// NOTE: problems/topics are now served by the real backend (see lib/api.ts).
+// Only solutions and profiles remain mocked until those endpoints land.
+
+const MOCK_PROBLEMS = [
   {
     id: "p1",
     slug: "design-url-shortener",

@@ -27,7 +27,7 @@ import {
   getSolutionsByAuthor,
 } from "@/lib/api";
 import type { ActivitySummary } from "@/lib/api";
-import type { Problem, Profile as ProfileType, Solution } from "@/types";
+import type { ProblemListItem, Profile as ProfileType, Solution } from "@/types";
 import { formatCount, formatDate, usernameFromName } from "@/lib/utils";
 
 const avatarFor = (seed: string) =>
@@ -43,7 +43,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [activity, setActivity] = useState<ActivitySummary | null>(null);
   const [solutions, setSolutions] = useState<Solution[]>([]);
-  const [saved, setSaved] = useState<Problem[]>([]);
+  const [saved, setSaved] = useState<ProblemListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function Profile() {
         const [p, sols, problems] = await Promise.all([
           getProfile(username),
           getSolutionsByAuthor(username),
-          getProblems(),
+          getProblems().catch(() => []),
         ]);
         if (!active) return;
         setProfile(p ?? null);
@@ -260,9 +260,11 @@ export default function Profile() {
                         </span>
                         <DifficultyBadge difficulty={p.difficulty} />
                       </div>
-                      <p className="mt-1 line-clamp-1 text-sm text-ink-muted">
-                        {p.summary}
-                      </p>
+                      {p.topics.length > 0 && (
+                        <p className="mono mt-1 line-clamp-1 text-xs text-ink-muted">
+                          {p.topics.map((t) => t.name).join(" · ")}
+                        </p>
+                      )}
                     </div>
                     <span className="shrink-0 text-sm font-semibold text-accent">
                       Solve →

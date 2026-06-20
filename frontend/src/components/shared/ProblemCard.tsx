@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
-import { IconArrowRight, IconUsers } from "@tabler/icons-react";
+import { IconArrowRight } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { DifficultyBadge } from "./DifficultyBadge";
-import type { Problem } from "@/types";
-import { formatCount } from "@/lib/utils";
+import type { ProblemListItem } from "@/types";
 
-export function ProblemCard({ problem }: { problem: Problem }) {
+export function ProblemCard({ problem }: { problem: ProblemListItem }) {
   return (
     <Link
       to={`/problems/${problem.slug}`}
@@ -14,21 +13,15 @@ export function ProblemCard({ problem }: { problem: Problem }) {
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="flex items-center justify-between">
         <DifficultyBadge difficulty={problem.difficulty} />
-        <span className="inline-flex items-center gap-1 text-xs text-ink-faint">
-          <IconUsers size={14} />
-          {formatCount(problem.solveCount)}
-        </span>
+        {!problem.is_published && <Badge variant="hard">Draft</Badge>}
       </div>
       <h3 className="mt-3 font-bold text-ink group-hover:text-accent">
         {problem.title}
       </h3>
-      <p className="mt-1 line-clamp-2 flex-1 text-sm text-ink-muted">
-        {problem.summary}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {problem.tags.slice(0, 2).map((tag) => (
-          <Badge key={tag} variant="neutral">
-            {tag}
+      <div className="mt-3 flex flex-1 flex-wrap items-start gap-1.5">
+        {problem.topics.slice(0, 3).map((t) => (
+          <Badge key={t.id} variant="neutral">
+            {t.name}
           </Badge>
         ))}
       </div>

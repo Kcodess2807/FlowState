@@ -11,6 +11,7 @@ from app.api.routes import (
     canvases,
     health,
     problems,
+    submissions,
     topics,
     workspaces,
     ws,
@@ -49,6 +50,7 @@ app.include_router(canvases.router, prefix=settings.API_V1_PREFIX)
 app.include_router(activity.router, prefix=settings.API_V1_PREFIX)
 app.include_router(topics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(problems.router, prefix=settings.API_V1_PREFIX)
+app.include_router(submissions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ws.router, prefix=settings.API_V1_PREFIX)
 
 
