@@ -65,7 +65,7 @@ export function TabsTrigger({
       className={cn(
         "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
         active
-          ? "bg-elevated text-accent shadow-glow-sm"
+          ? "bg-elevated text-ink shadow-card"
           : "text-ink-muted hover:text-ink",
       )}
     >

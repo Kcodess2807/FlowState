@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { IconUsers } from "@tabler/icons-react";
+import { UserMultipleIcon } from "hugeicons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DifficultyBadge } from "./DifficultyBadge";
@@ -8,12 +8,12 @@ import { formatCount } from "@/lib/utils";
 
 export function ProblemRow({ problem }: { problem: Problem }) {
   return (
-    <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-white/[0.04] sm:flex-row sm:items-center sm:gap-4 sm:px-5">
+    <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-ink/[0.04] sm:flex-row sm:items-center sm:gap-4 sm:px-5">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-3">
           <Link
             to={`/problems/${problem.slug}`}
-            className="truncate font-semibold text-ink hover:text-accent"
+            className="truncate font-display text-[17px] font-semibold tracking-tight text-ink hover:text-accent"
           >
             {problem.title}
           </Link>
@@ -33,7 +33,7 @@ export function ProblemRow({ problem }: { problem: Problem }) {
 
       <div className="flex items-center justify-between gap-4 sm:justify-end">
         <span className="inline-flex items-center gap-1.5 text-sm text-ink-faint">
-          <IconUsers size={16} />
+          <UserMultipleIcon size={16} />
           {formatCount(problem.solveCount)}
         </span>
         <Button size="sm" asChild>

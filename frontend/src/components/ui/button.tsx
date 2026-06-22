@@ -4,18 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-50 select-none",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-50 select-none",
   {
     variants: {
       variant: {
         default:
-          "bg-accent text-bg shadow-glow-sm hover:shadow-glow hover:brightness-110 active:translate-y-px",
+          "bg-ink text-bg hover:bg-ink/90 active:translate-y-px",
+        accent:
+          "bg-accent text-accent-contrast hover:bg-accent/90 active:translate-y-px",
         secondary:
-          "border border-hairline bg-surface text-ink hover:border-hairline-strong hover:bg-white/[0.04]",
+          "border border-hairline-strong bg-elevated text-ink shadow-card hover:bg-surface",
         outline:
-          "border border-hairline-strong bg-transparent text-ink hover:border-accent/50 hover:text-accent",
-        ghost: "text-ink-muted hover:bg-white/[0.05] hover:text-ink",
-        link: "text-accent underline-offset-4 hover:underline",
+          "border border-hairline-strong bg-transparent text-ink hover:border-ink/40 hover:bg-ink/[0.06]",
+        ghost: "text-ink-muted hover:bg-ink/[0.06] hover:text-ink",
+        link: "text-accent underline underline-offset-4 decoration-accent/40 hover:decoration-accent",
       },
       size: {
         default: "h-10 px-5",
