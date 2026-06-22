@@ -1,16 +1,15 @@
 import type {
   AuthUser,
+  Difficulty,
   ExploreSort,
   Problem,
+  ProblemListItem,
   Profile,
   Solution,
   TokenPair,
+  Topic,
 } from "@/types";
-import {
-  MOCK_PROBLEMS,
-  MOCK_PROFILES,
-  MOCK_SOLUTIONS,
-} from "./mock-data";
+import { MOCK_PROFILES, MOCK_SOLUTIONS } from "./mock-data";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
@@ -202,14 +201,29 @@ export function canvasSocketUrl(canvasId: string, since: number): string {
 const delay = <T>(value: T, ms = 250): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(value), ms));
 
-export async function getProblems(): Promise<Problem[]> {
-  // TODO: GET /api/v1/problems
-  return delay(MOCK_PROBLEMS);
+export interface ProblemFilters {
+  difficulty?: Difficulty;
+  topic?: string;
+  search?: string;
 }
 
-export async function getProblem(slug: string): Promise<Problem | undefined> {
-  // TODO: GET /api/v1/problems/{slug}
-  return delay(MOCK_PROBLEMS.find((p) => p.slug === slug));
+export function getProblems(
+  filters: ProblemFilters = {},
+): Promise<ProblemListItem[]> {
+  const params = new URLSearchParams();
+  if (filters.difficulty) params.set("difficulty", filters.difficulty);
+  if (filters.topic) params.set("topic", filters.topic);
+  if (filters.search) params.set("search", filters.search);
+  const qs = params.toString();
+  return request<ProblemListItem[]>(`/problems${qs ? `?${qs}` : ""}`);
+}
+
+export function getProblem(slug: string): Promise<Problem> {
+  return request<Problem>(`/problems/${slug}`);
+}
+
+export function getTopics(): Promise<Topic[]> {
+  return request<Topic[]>("/topics");
 }
 
 export async function getSolutions(

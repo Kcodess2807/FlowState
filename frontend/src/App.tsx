@@ -25,8 +25,22 @@ export default function App() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/problems" element={<Problems />} />
-        <Route path="/problems/:slug" element={<ProblemDetail />} />
+        <Route
+          path="/problems"
+          element={
+            <ProtectedRoute>
+              <Problems />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/problems/:slug"
+          element={
+            <ProtectedRoute>
+              <ProblemDetail />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/explore" element={<Explore />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/login" element={<Login />} />

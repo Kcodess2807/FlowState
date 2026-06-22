@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search01Icon } from "hugeicons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
@@ -6,41 +6,43 @@ import { ProblemRow } from "@/components/shared/ProblemRow";
 import { Input } from "@/components/ui/input";
 import { FadeIn } from "@/components/shared/FadeIn";
 import { getProblems } from "@/lib/api";
-import { ALL_TAGS } from "@/lib/mock-data";
-import type { Difficulty, Problem } from "@/types";
+import type { Difficulty, ProblemListItem, Problem } from "@/types";
 import { cn } from "@/lib/utils";
+import { ALL_TAGS } from "@/lib/mock-data";
 
-const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
+const DIFFICULTIES: { label: string; value: Difficulty }[] = [
+  { label: "Easy", value: "easy" },
+  { label: "Medium", value: "medium" },
+  { label: "Hard", value: "hard" },
+];
 
 export default function Problems() {
-  const [problems, setProblems] = useState<Problem[]>([]);
+  const [problems, setProblems] = useState<ProblemListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
+  // Server-side filtering; search is debounced so we don't refetch per keystroke.
   useEffect(() => {
-    getProblems().then((p) => {
-      setProblems(p);
-      setLoading(false);
-    });
-  }, []);
-
-  const filtered = useMemo(() => {
-    return problems.filter((p) => {
-      if (difficulty && p.difficulty !== difficulty) return false;
-      if (activeTag && !p.tags.includes(activeTag)) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !p.title.toLowerCase().includes(q) &&
-          !p.summary.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      return true;
-    });
-  }, [problems, difficulty, activeTag, search]);
+    setLoading(true);
+    const handle = setTimeout(() => {
+      getProblems({
+        difficulty: difficulty ?? undefined,
+        topic: activeTag ?? undefined,
+        search: search.trim() || undefined,
+      })
+        .then((p) => {
+          setProblems(p);
+          setLoading(false);
+        })
+        .catch(() => {
+          setProblems([]);
+          setLoading(false);
+        });
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [difficulty, activeTag, search]);
 
   return (
     <SiteLayout>
@@ -77,19 +79,19 @@ export default function Problems() {
               <div className="flex items-center gap-1.5">
                 {DIFFICULTIES.map((d) => (
                   <button
-                    key={d}
+                    key={d.value}
                     type="button"
                     onClick={() =>
-                      setDifficulty((cur) => (cur === d ? null : d))
+                      setDifficulty((cur) => (cur === d.value ? null : d.value))
                     }
                     className={cn(
                       "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                      difficulty === d
+                      difficulty === d.value
                         ? "border-accent bg-accent/10 text-accent"
                         : "border-hairline text-ink-muted hover:border-accent/40",
                     )}
                   >
-                    {d}
+                    {d.label}
                   </button>
                 ))}
               </div>
@@ -103,7 +105,9 @@ export default function Problems() {
                 <button
                   key={tag}
                   type="button"
-                  onClick={() => setActiveTag((cur) => (cur === tag ? null : tag))}
+                  onClick={() =>
+                    setActiveTag((cur) => (cur === tag ? null : tag))
+                  }
                   className={cn(
                     "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
                     activeTag === tag
@@ -129,20 +133,20 @@ export default function Problems() {
                 </div>
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : problems.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="divide-y divide-hairline">
-              {filtered.map((p) => (
-                <ProblemRow key={p.id} problem={p} />
+              {problems.map((p) => (
+                <ProblemRow key={p.id} problem={p as Problem} />
               ))}
             </div>
           )}
         </div>
 
-        {!loading && filtered.length > 0 && (
-          <p className="mt-4 text-center text-sm text-ink-faint">
-            Showing {filtered.length} of {problems.length} problems
+        {!loading && problems.length > 0 && (
+          <p className="mono mt-4 text-center text-sm text-ink-faint">
+            {problems.length} problem{problems.length === 1 ? "" : "s"}
           </p>
         )}
       </div>
@@ -153,7 +157,11 @@ export default function Problems() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <svg viewBox="0 0 120 80" className="h-20 w-28 text-accent/40" fill="none">
+      <svg
+        viewBox="0 0 120 80"
+        className="h-20 w-28 text-accent/40"
+        fill="none"
+      >
         <rect
           x="6"
           y="10"
@@ -173,7 +181,7 @@ function EmptyState() {
         />
       </svg>
       <h3 className="mt-4 font-semibold text-ink-muted">No problems match</h3>
-      <p className="mt-1 text-sm text-ink-muted">
+      <p className="mt-1 text-sm text-ink-faint">
         Try clearing a filter or searching for something else.
       </p>
     </div>

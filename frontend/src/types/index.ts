@@ -1,23 +1,38 @@
-export type Difficulty = "Easy" | "Medium" | "Hard";
+export type Difficulty = "easy" | "medium" | "hard";
 
-export interface Tag {
+export interface Topic {
   id: string;
-  label: string;
+  slug: string;
+  name: string;
 }
 
-export interface Problem {
+export interface RubricCriterion {
+  key: string;
+  title: string;
+  description: string;
+  weight: number;
+}
+
+/** Compact problem shape returned by the list endpoint. */
+export interface ProblemListItem {
   id: string;
   slug: string;
   title: string;
   difficulty: Difficulty;
-  /** Short one-liner shown in lists. */
-  summary: string;
-  /** Full markdown-ish statement shown on the detail page. */
-  statement: string;
+  is_published: boolean;
+  topics: Topic[];
+  solveCount: number;
+}
+
+/** Full problem returned by the detail endpoint. */
+export interface Problem extends ProblemListItem {
+  description: string;
+  rubric: RubricCriterion[];
+  reference_solution: string | null;
+  created_at: string;
+  tags: string[];
   constraints: string[];
   hints: string[];
-  tags: string[];
-  solveCount: number;
 }
 
 export interface Author {

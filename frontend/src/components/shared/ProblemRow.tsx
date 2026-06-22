@@ -10,7 +10,7 @@ export function ProblemRow({ problem }: { problem: Problem }) {
   return (
     <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-ink/[0.04] sm:flex-row sm:items-center sm:gap-4 sm:px-5">
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             to={`/problems/${problem.slug}`}
             className="truncate font-display text-[17px] font-semibold tracking-tight text-ink hover:text-accent"
@@ -18,17 +18,17 @@ export function ProblemRow({ problem }: { problem: Problem }) {
             {problem.title}
           </Link>
           <DifficultyBadge difficulty={problem.difficulty} />
+          {!problem.is_published && <Badge variant="hard">Draft</Badge>}
         </div>
-        <p className="mt-1 line-clamp-1 text-sm text-ink-muted">
-          {problem.summary}
-        </p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {problem.tags.map((tag) => (
-            <Badge key={tag} variant="neutral">
-              {tag}
-            </Badge>
-          ))}
-        </div>
+        {problem.topics.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {problem.topics.map((t) => (
+              <Badge key={t.id} variant="neutral">
+                {t.name}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-4 sm:justify-end">

@@ -18,12 +18,12 @@ import { useAuth } from "@/context/AuthContext";
 import { ContributionHeatmap } from "@/components/shared/ContributionHeatmap";
 import { getMyActivity, getProblems, getSolutions } from "@/lib/api";
 import type { ActivitySummary } from "@/lib/api";
-import type { Problem, Solution } from "@/types";
+import type { ProblemListItem, Solution, Problem } from "@/types";
 import { formatCount, todayLong } from "@/lib/utils";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [problems, setProblems] = useState<Problem[]>([]);
+  const [problems, setProblems] = useState<ProblemListItem[]>([]);
   const [highlights, setHighlights] = useState<Solution[]>([]);
   const [activity, setActivity] = useState<ActivitySummary | null>(null);
 
@@ -99,8 +99,8 @@ export default function Dashboard() {
                   Your activity
                 </h2>
                 <p className="text-sm text-ink-muted">
-                  {formatCount(activity.total_contributions)} contributions in the
-                  last year
+                  {formatCount(activity.total_contributions)} contributions in
+                  the last year
                 </p>
               </div>
               <div className="mt-6">
@@ -120,15 +120,17 @@ export default function Dashboard() {
               </h2>
               <div className="mt-5 flex flex-col items-start justify-between gap-4 rounded-lg border border-accent/25 bg-accent/[0.06] p-6 sm:flex-row sm:items-center">
                 <div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <span className="font-display text-lg font-semibold tracking-tight text-ink">
                       {lastAttempted.title}
                     </span>
                     <DifficultyBadge difficulty={lastAttempted.difficulty} />
                   </div>
-                  <p className="mt-1 max-w-xl text-sm text-ink-muted">
-                    {lastAttempted.summary}
-                  </p>
+                  {lastAttempted.topics.length > 0 && (
+                    <p className="mono mt-1.5 text-xs text-ink-muted">
+                      {lastAttempted.topics.map((t) => t.name).join(" · ")}
+                    </p>
+                  )}
                 </div>
                 <Button asChild>
                   <Link to={`/problems/${lastAttempted.slug}`}>
@@ -157,7 +159,7 @@ export default function Dashboard() {
           <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {recommended.map((p, i) => (
               <FadeIn key={p.id} delay={i * 0.06}>
-                <ProblemCard problem={p} />
+                <ProblemCard problem={p as Problem} />
               </FadeIn>
             ))}
           </div>

@@ -16,6 +16,10 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="true", nullable=False
     )
+    # content authors (problem creators) only
+    is_staff: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r}>"

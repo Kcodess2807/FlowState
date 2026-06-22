@@ -11,7 +11,6 @@ import {
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Accordion } from "@/components/ui/accordion";
 import { DifficultyBadge } from "@/components/shared/DifficultyBadge";
 import { FlowCanvas } from "@/components/canvas/FlowCanvas";
 import { useAuth } from "@/context/AuthContext";
@@ -23,6 +22,7 @@ import {
 } from "@/lib/api";
 import type { Problem } from "@/types";
 import { formatCount } from "@/lib/utils";
+import { Accordion } from "@/components/ui/accordion";
 
 export default function ProblemDetail() {
   const { slug = "" } = useParams();
@@ -39,11 +39,17 @@ export default function ProblemDetail() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getProblem(slug).then((p) => {
-      if (!active) return;
-      setProblem(p ?? null);
-      setLoading(false);
-    });
+    getProblem(slug)
+      .then((p) => {
+        if (!active) return;
+        setProblem(p);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setProblem(null);
+        setLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -124,7 +130,7 @@ export default function ProblemDetail() {
 
       <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-0 lg:grid-cols-[2fr_3fr]">
         <div className="border-hairline px-4 py-8 sm:px-6 lg:border-r lg:px-8">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <DifficultyBadge difficulty={problem.difficulty} />
             <span className="inline-flex items-center gap-1.5 text-sm text-ink-faint">
               <UserMultipleIcon size={15} />
@@ -144,12 +150,16 @@ export default function ProblemDetail() {
             ))}
           </div>
 
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+            {problem.title}
+          </h1>
+
           <section className="mt-7">
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
               Problem
             </h2>
-            <p className="mt-2 leading-relaxed text-ink-muted">
-              {problem.statement}
+            <p className="mt-3 whitespace-pre-line leading-relaxed text-ink-muted">
+              {problem.description}
             </p>
           </section>
 

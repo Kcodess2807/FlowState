@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     # snapshot every N ops, 0 disables
     SNAPSHOT_EVERY_N_OPS: int = 50
 
+    # --- Evaluation (OpenRouter) ---
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    EVAL_MODEL: str = "anthropic/claude-3.5-sonnet"
+    EVAL_PASS_THRESHOLD: int = 70  # percent
+    EVAL_TIMEOUT_SECONDS: int = 60
+
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = "flowstate"

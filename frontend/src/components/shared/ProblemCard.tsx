@@ -21,13 +21,10 @@ export function ProblemCard({ problem }: { problem: Problem }) {
       <h3 className="mt-3 font-display text-lg font-semibold tracking-tight text-ink transition-colors group-hover:text-accent">
         {problem.title}
       </h3>
-      <p className="mt-1 line-clamp-2 flex-1 text-sm text-ink-muted">
-        {problem.summary}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {problem.tags.slice(0, 2).map((tag) => (
-          <Badge key={tag} variant="neutral">
-            {tag}
+      <div className="mt-3 flex flex-1 flex-wrap items-start gap-1.5">
+        {problem.topics.slice(0, 3).map((t) => (
+          <Badge key={t.id} variant="neutral">
+            {t.name}
           </Badge>
         ))}
       </div>
