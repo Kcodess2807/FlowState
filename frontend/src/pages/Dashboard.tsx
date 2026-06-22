@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  IconActivity,
-  IconArrowRight,
-  IconCalendar,
-  IconFlame,
-} from "@tabler/icons-react";
+  Activity03Icon,
+  ArrowRight01Icon,
+  Calendar03Icon,
+  Fire03Icon,
+} from "hugeicons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
 import { ProblemCard } from "@/components/shared/ProblemCard";
@@ -37,17 +37,17 @@ export default function Dashboard() {
 
   const metrics = [
     {
-      icon: IconActivity,
+      icon: Activity03Icon,
       label: "Contributions",
       value: activity?.total_contributions ?? 0,
     },
     {
-      icon: IconFlame,
+      icon: Fire03Icon,
       label: "Current Streak",
       value: activity?.current_streak ?? 0,
     },
     {
-      icon: IconCalendar,
+      icon: Calendar03Icon,
       label: "Active Days",
       value: activity?.active_days ?? 0,
     },
@@ -62,7 +62,7 @@ export default function Dashboard() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         {/* Greeting */}
         <FadeIn>
-          <h1 className="text-3xl font-extrabold tracking-tight text-ink">
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">
             Hey <GradientText>{firstName}</GradientText>{" "}
             <span className="inline-block">👋</span>
           </h1>
@@ -75,13 +75,13 @@ export default function Dashboard() {
             {metrics.map((m) => (
               <div
                 key={m.label}
-                className="flex items-center gap-4 rounded-2xl border border-hairline bg-elevated p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow-sm"
+                className="flex items-center gap-4 rounded-lg border border-hairline bg-elevated p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-lg"
               >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-bg shadow-glow-sm">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-accent text-accent-contrast">
                   <m.icon size={24} />
                 </span>
                 <div>
-                  <div className="text-2xl font-extrabold text-ink">
+                  <div className="font-display text-2xl font-semibold text-ink">
                     {formatCount(m.value)}
                   </div>
                   <div className="text-sm text-ink-muted">{m.label}</div>
@@ -93,9 +93,11 @@ export default function Dashboard() {
 
         {activity && (
           <FadeIn delay={0.08}>
-            <section className="mt-8 rounded-2xl border border-hairline bg-elevated p-6">
+            <section className="mt-8 rounded-lg border border-hairline bg-elevated p-6">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-lg font-bold text-ink">Your activity</h2>
+                <h2 className="font-display text-lg font-semibold tracking-tight text-ink">
+                  Your activity
+                </h2>
                 <p className="text-sm text-ink-muted">
                   {formatCount(activity.total_contributions)} contributions in the
                   last year
@@ -112,14 +114,14 @@ export default function Dashboard() {
         {lastAttempted && (
           <FadeIn delay={0.1}>
             <section className="mt-12">
-              <h2 className="relative inline-block text-lg font-bold text-ink">
+              <h2 className="relative inline-block font-display text-lg font-semibold tracking-tight text-ink">
                 Continue where you left off
                 <DoodleUnderline className="-bottom-2" />
               </h2>
-              <div className="mt-5 flex flex-col items-start justify-between gap-4 rounded-2xl border border-accent/25 bg-accent/[0.06] p-6 sm:flex-row sm:items-center">
+              <div className="mt-5 flex flex-col items-start justify-between gap-4 rounded-lg border border-accent/25 bg-accent/[0.06] p-6 sm:flex-row sm:items-center">
                 <div>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-ink">
+                    <span className="font-display text-lg font-semibold tracking-tight text-ink">
                       {lastAttempted.title}
                     </span>
                     <DifficultyBadge difficulty={lastAttempted.difficulty} />
@@ -131,7 +133,7 @@ export default function Dashboard() {
                 <Button asChild>
                   <Link to={`/problems/${lastAttempted.slug}`}>
                     Resume
-                    <IconArrowRight size={16} />
+                    <ArrowRight01Icon size={16} />
                   </Link>
                 </Button>
               </div>
@@ -142,7 +144,7 @@ export default function Dashboard() {
         {/* Recommended */}
         <section className="mt-12">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-ink">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-ink">
               Recommended Problems
             </h2>
             <Link
@@ -164,7 +166,7 @@ export default function Dashboard() {
         {/* Community highlights */}
         <section className="mt-12">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-ink">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-ink">
               Community Highlights
             </h2>
             <Link
