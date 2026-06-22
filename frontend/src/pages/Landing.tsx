@@ -2,12 +2,12 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  IconArrowRight,
-  IconChartDots3,
-  IconPencil,
-  IconPlayerPlayFilled,
-  IconShare3,
-} from "@tabler/icons-react";
+  ArrowRight01Icon,
+  Idea01Icon,
+  PencilEdit01Icon,
+  PlayIcon,
+  Share08Icon,
+} from "hugeicons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/shared/FadeIn";
@@ -32,19 +32,19 @@ const TOPICS = [
 const FEATURES = [
   {
     n: "01",
-    icon: IconChartDots3,
+    icon: Idea01Icon,
     title: "Solve Problems",
     body: "Curated system design challenges — from URL shorteners to distributed caches — with real constraints and progressive hints.",
   },
   {
     n: "02",
-    icon: IconPencil,
+    icon: PencilEdit01Icon,
     title: "Draw on Canvas",
     body: "Sketch architecture on an infinite, glowing dot-grid. Nodes, edges, and components — exactly how you'd whiteboard it in an interview.",
   },
   {
     n: "03",
-    icon: IconShare3,
+    icon: Share08Icon,
     title: "Showcase Work",
     body: "Publish to the community feed, collect likes, and build a portfolio of designs that proves your skills to anyone.",
   },
@@ -52,14 +52,17 @@ const FEATURES = [
 
 const STEPS = [
   { n: "1", title: "Pick a problem", body: "Browse by difficulty and topic." },
-  { n: "2", title: "Design on canvas", body: "Diagram your architecture live." },
+  {
+    n: "2",
+    title: "Design on canvas",
+    body: "Diagram your architecture live.",
+  },
   { n: "3", title: "Share & get feedback", body: "Publish to the community." },
 ];
 
 export default function Landing() {
   return (
     <SiteLayout>
-      {/* ---------------- Hero ---------------- */}
       <section className="relative overflow-hidden">
         <HeroBackdrop />
 
@@ -84,7 +87,7 @@ export default function Landing() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.05 }}
-                className="mt-6 text-5xl font-bold leading-[1.04] tracking-tight text-ink sm:text-6xl"
+                className="mt-6 font-display text-5xl font-semibold leading-[1.02] tracking-tight text-ink sm:text-[4.25rem]"
               >
                 System Design.
                 <br />
@@ -112,12 +115,12 @@ export default function Landing() {
                 <Button size="lg" asChild>
                   <Link to="/problems">
                     Start Practicing
-                    <IconArrowRight size={18} />
+                    <ArrowRight01Icon size={18} />
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
                   <Link to="/explore">
-                    <IconPlayerPlayFilled size={15} />
+                    <PlayIcon size={15} />
                     Explore the community
                   </Link>
                 </Button>
@@ -158,7 +161,7 @@ export default function Landing() {
           <span className="mono text-xs uppercase tracking-[0.2em] text-accent">
             The loop
           </span>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             Solve. Draw. Showcase.
           </h2>
           <p className="mt-4 text-ink-muted">
@@ -166,7 +169,7 @@ export default function Landing() {
           </p>
         </FadeIn>
 
-        <div className="mt-16 flex flex-col gap-px overflow-hidden rounded-2xl border border-hairline bg-hairline">
+        <div className="mt-16 flex flex-col gap-px overflow-hidden rounded-lg border border-hairline bg-hairline">
           {FEATURES.map((f, i) => (
             <FadeIn key={f.title} delay={i * 0.08}>
               <div className="group grid items-center gap-6 bg-elevated p-7 sm:grid-cols-[auto_1fr_auto] sm:p-8">
@@ -175,17 +178,19 @@ export default function Landing() {
                 </span>
                 <div className="flex items-start gap-4">
                   <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-hairline bg-surface text-accent">
-                    <f.icon size={20} stroke={1.6} />
+                    <f.icon size={20} strokeWidth={1.6} />
                   </span>
                   <div>
-                    <h3 className="text-lg font-semibold text-ink">{f.title}</h3>
+                    <h3 className="font-display text-lg font-semibold tracking-tight text-ink">
+                      {f.title}
+                    </h3>
                     <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink-muted">
                       {f.body}
                     </p>
                   </div>
                 </div>
                 <span className="hidden text-ink-faint transition-all group-hover:translate-x-1 group-hover:text-accent sm:block">
-                  <IconArrowRight size={20} />
+                  <ArrowRight01Icon size={20} />
                 </span>
               </div>
             </FadeIn>
@@ -200,46 +205,20 @@ export default function Landing() {
             <span className="mono text-xs uppercase tracking-[0.2em] text-accent">
               Workflow
             </span>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+            <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
               From prompt to portfolio in three steps
             </h2>
           </FadeIn>
 
           <div className="relative mt-16 grid gap-10 md:grid-cols-3">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 800 24"
-              preserveAspectRatio="none"
-              className="pointer-events-none absolute left-0 top-7 hidden h-6 w-full md:block"
-              fill="none"
-            >
-              <path
-                id="step-path"
-                d="M130 12H670"
-                stroke="rgba(255,255,255,0.12)"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M130 12H670"
-                stroke="#2DD4BF"
-                strokeWidth="1.5"
-                strokeDasharray="2 10"
-                className="animate-dash"
-                opacity="0.7"
-              />
-              <circle r="3" fill="#38BDF8">
-                <animateMotion dur="3s" repeatCount="indefinite">
-                  <mpath href="#step-path" />
-                </animateMotion>
-              </circle>
-            </svg>
-
             {STEPS.map((s, i) => (
               <FadeIn key={s.n} delay={i * 0.1} className="relative">
-                <div className="mono flex h-14 w-14 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-xl font-semibold text-accent shadow-glow-sm">
+                <div className="mono flex h-14 w-14 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-xl font-semibold text-accent">
                   {s.n}
                 </div>
-                <h3 className="mt-5 text-lg font-semibold text-ink">{s.title}</h3>
+                <h3 className="mt-5 font-display text-lg font-semibold tracking-tight text-ink">
+                  {s.title}
+                </h3>
                 <p className="mt-2 text-sm text-ink-muted">{s.body}</p>
               </FadeIn>
             ))}
@@ -247,15 +226,13 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ---------------- CTA ---------------- */}
       <section className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
         <FadeIn>
-          <div className="relative overflow-hidden rounded-3xl border border-hairline bg-elevated px-8 py-16 text-center">
+          <div className="relative overflow-hidden rounded-lg border border-hairline bg-elevated px-8 py-16 text-center">
             <div className="blueprint absolute inset-0" />
-            <div className="absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 -translate-y-1/3 rounded-full bg-accent-glow blur-3xl" />
-            <div className="absolute inset-0 noise opacity-[0.04]" />
+            <div className="absolute inset-0 noise opacity-[0.03]" />
             <div className="relative">
-              <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
                 Ready to design something?
               </h2>
               <p className="mx-auto mt-3 max-w-md text-ink-muted">
@@ -266,7 +243,7 @@ export default function Landing() {
                 <Button size="lg" asChild>
                   <Link to="/problems">
                     Start Practicing
-                    <IconArrowRight size={18} />
+                    <ArrowRight01Icon size={18} />
                   </Link>
                 </Button>
               </div>
@@ -278,13 +255,10 @@ export default function Landing() {
   );
 }
 
-/** Dark hero backdrop: blueprint grid, a single radial accent glow, and a
- *  receding perspective dot-grid plane fading into the distance. */
 function HeroBackdrop() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
       <div className="blueprint absolute inset-0 opacity-60" />
-      <div className="absolute left-1/2 top-[-6rem] h-[34rem] w-[52rem] -translate-x-1/2 rounded-full bg-accent-glow blur-[120px] opacity-50" />
       <div
         className="absolute inset-x-0 bottom-0 h-72 origin-bottom bg-dot-grid bg-dots opacity-40"
         style={{
@@ -293,7 +267,7 @@ function HeroBackdrop() {
           WebkitMaskImage: "linear-gradient(to top, #000, transparent)",
         }}
       />
-      <div className="absolute inset-0 noise opacity-[0.04]" />
+      <div className="absolute inset-0 noise opacity-[0.03]" />
     </div>
   );
 }
@@ -355,9 +329,7 @@ function HeroDiagram() {
       className="relative mx-auto w-full max-w-2xl"
       style={{ perspective: "1200px" }}
     >
-      {/* floating telemetry */}
       <Telemetry className="left-2 top-2" label="p99 < 100ms" dot />
-      <Telemetry className="right-2 top-16" label="10M daily users" />
       <Telemetry className="bottom-6 left-6" label="99.99% uptime" />
 
       <div
@@ -376,7 +348,7 @@ function HeroDiagram() {
               markerHeight="6"
               orient="auto-start-reverse"
             >
-              <path d="M0 0L10 5L0 10z" fill="rgba(255,255,255,0.35)" />
+              <path d="M0 0L10 5L0 10z" fill="rgb(var(--ink) / 0.35)" />
             </marker>
           </defs>
 
@@ -389,18 +361,28 @@ function HeroDiagram() {
             const id = `edge-${i}`;
             return (
               <g key={id}>
-                <path id={id} d={d} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth={1.5} />
+                <path
+                  id={id}
+                  d={d}
+                  fill="none"
+                  stroke="rgb(var(--ink) / 0.14)"
+                  strokeWidth={1.5}
+                />
                 <path
                   d={d}
                   fill="none"
-                  stroke="#2DD4BF"
+                  stroke="rgb(var(--accent))"
                   strokeWidth={1.5}
                   strokeDasharray="2 9"
-                  opacity={0.5}
+                  opacity={0.6}
                   className="animate-dash"
                 />
-                <circle r={3} fill="#38BDF8">
-                  <animateMotion dur="2.4s" begin={`${i * 0.35}s`} repeatCount="indefinite">
+                <circle r={3} fill="rgb(var(--accent))">
+                  <animateMotion
+                    dur="2.4s"
+                    begin={`${i * 0.35}s`}
+                    repeatCount="indefinite"
+                  >
                     <mpath href={`#${id}`} />
                   </animateMotion>
                 </circle>
@@ -409,13 +391,19 @@ function HeroDiagram() {
           })}
 
           {NODES.map((n) => (
-            <foreignObject key={n.id} x={n.x} y={n.y} width={NODE_W} height={NODE_H}>
+            <foreignObject
+              key={n.id}
+              x={n.x}
+              y={n.y}
+              width={NODE_W}
+              height={NODE_H}
+            >
               <div
                 className={
-                  "flex h-full w-full items-center gap-2 rounded-lg border px-3 " +
+                  "flex h-full w-full items-center gap-2 rounded-lg border bg-elevated px-3 " +
                   (n.active
-                    ? "border-accent/50 bg-surface shadow-glow-sm"
-                    : "border-hairline-strong bg-surface")
+                    ? "border-accent/50 shadow-card-lg"
+                    : "border-hairline-strong shadow-card")
                 }
               >
                 <span
@@ -447,9 +435,9 @@ function Telemetry({
 }) {
   return (
     <div
-      className={`absolute z-10 inline-flex animate-float items-center gap-1.5 rounded-md border border-hairline bg-surface/80 px-2.5 py-1 text-[11px] text-ink-muted backdrop-blur-sm mono ${className ?? ""}`}
+      className={`absolute z-10 inline-flex animate-float items-center gap-1.5 rounded-md border border-hairline bg-elevated/80 px-2.5 py-1 text-[11px] text-ink-muted shadow-card backdrop-blur-sm mono ${className ?? ""}`}
     >
-      {dot && <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan" />}
+      {dot && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
       {label}
     </div>
   );

@@ -27,10 +27,10 @@ export default function Explore() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <FadeIn className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <span className="text-sm font-semibold uppercase tracking-widest text-accent">
+            <span className="mono text-xs uppercase tracking-[0.2em] text-accent">
               Community
             </span>
-            <h1 className="relative mt-2 inline-block text-4xl font-extrabold tracking-tight text-ink">
+            <h1 className="relative mt-2 inline-block font-display text-5xl font-semibold tracking-tight text-ink">
               Explore
               <DoodleUnderline className="-bottom-3" />
             </h1>
@@ -46,7 +46,7 @@ export default function Explore() {
                 type="button"
                 onClick={() => setSort(s)}
                 className={cn(
-                  "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                  "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                   sort === s
                     ? "border-accent bg-accent/10 text-accent"
                     : "border-hairline text-ink-muted hover:border-accent/40",
@@ -63,12 +63,12 @@ export default function Explore() {
             ? Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="animate-pulse overflow-hidden rounded-xl border border-hairline bg-elevated"
+                  className="animate-pulse overflow-hidden rounded-lg border border-hairline bg-elevated"
                 >
-                  <div className="aspect-[16/10] bg-white/[0.05]" />
+                  <div className="aspect-[16/10] bg-ink/[0.06]" />
                   <div className="space-y-3 p-4">
-                    <div className="h-4 w-2/3 rounded bg-white/[0.05]" />
-                    <div className="h-3 w-1/2 rounded bg-white/[0.05]" />
+                    <div className="h-4 w-2/3 rounded bg-ink/[0.06]" />
+                    <div className="h-3 w-1/2 rounded bg-ink/[0.06]" />
                   </div>
                 </div>
               ))

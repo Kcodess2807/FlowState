@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  IconActivity,
-  IconBrandGithub,
-  IconCalendar,
-  IconCalendarStats,
-  IconFlame,
-  IconHeart,
-  IconLoader2,
-  IconShare3,
-  IconTrophy,
-} from "@tabler/icons-react";
+  Activity03Icon,
+  Github01Icon,
+  Calendar03Icon,
+  ChampionIcon,
+  Fire03Icon,
+  FavouriteIcon,
+  Loading03Icon,
+  Share08Icon,
+} from "hugeicons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,7 @@ import { formatCount, formatDate, usernameFromName } from "@/lib/utils";
 const avatarFor = (seed: string) =>
   `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(
     seed,
-  )}&backgroundColor=ccfbf1`;
+  )}&backgroundColor=e7e3fb`;
 
 export default function Profile() {
   const { username = "" } = useParams();
@@ -97,7 +96,7 @@ export default function Profile() {
     return (
       <SiteLayout>
         <div className="flex min-h-[60vh] items-center justify-center">
-          <IconLoader2 className="animate-spin text-accent" size={28} />
+          <Loading03Icon className="animate-spin text-accent" size={28} />
         </div>
       </SiteLayout>
     );
@@ -107,7 +106,9 @@ export default function Profile() {
     return (
       <SiteLayout>
         <div className="mx-auto max-w-md px-4 py-24 text-center">
-          <h1 className="text-2xl font-bold text-ink">User not found</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">
+            User not found
+          </h1>
           <p className="mt-2 text-ink-muted">
             No profile exists for “{username}”.
           </p>
@@ -122,15 +123,15 @@ export default function Profile() {
   const stats =
     isSelf && activity
       ? [
-          { icon: IconFlame, label: "Current Streak", value: activity.current_streak },
-          { icon: IconCalendarStats, label: "Longest Streak", value: activity.longest_streak },
-          { icon: IconActivity, label: "Contributions", value: activity.total_contributions },
-          { icon: IconCalendar, label: "Active Days", value: activity.active_days },
+          { icon: Fire03Icon, label: "Current Streak", value: activity.current_streak },
+          { icon: ChampionIcon, label: "Longest Streak", value: activity.longest_streak },
+          { icon: Activity03Icon, label: "Contributions", value: activity.total_contributions },
+          { icon: Calendar03Icon, label: "Active Days", value: activity.active_days },
         ]
       : [
-          { icon: IconTrophy, label: "Problems Solved", value: profile.stats.problemsSolved },
-          { icon: IconShare3, label: "Solutions Shared", value: profile.stats.solutionsShared },
-          { icon: IconHeart, label: "Likes Received", value: profile.stats.likesReceived },
+          { icon: ChampionIcon, label: "Problems Solved", value: profile.stats.problemsSolved },
+          { icon: Share08Icon, label: "Solutions Shared", value: profile.stats.solutionsShared },
+          { icon: FavouriteIcon, label: "Likes Received", value: profile.stats.likesReceived },
         ];
 
   return (
@@ -145,7 +146,7 @@ export default function Profile() {
             />
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+                <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">
                   {profile.displayName}
                 </h1>
                 {isSelf && (
@@ -166,12 +167,12 @@ export default function Profile() {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 hover:text-accent"
                   >
-                    <IconBrandGithub size={16} />
+                    <Github01Icon size={16} />
                     GitHub
                   </a>
                 )}
                 <span className="inline-flex items-center gap-1.5">
-                  <IconCalendar size={16} />
+                  <Calendar03Icon size={16} />
                   Joined {formatDate(profile.joinedAt)}
                 </span>
               </div>
@@ -182,10 +183,10 @@ export default function Profile() {
             {stats.map((s) => (
               <div
                 key={s.label}
-                className="rounded-xl border border-hairline bg-elevated p-4 text-center"
+                className="rounded-lg border border-hairline bg-elevated p-4 text-center"
               >
                 <s.icon size={20} className="mx-auto text-accent" />
-                <div className="mt-2 text-xl font-extrabold text-ink">
+                <div className="mt-2 font-display text-2xl font-semibold text-ink">
                   {formatCount(s.value)}
                 </div>
                 <div className="text-xs text-ink-muted">{s.label}</div>
@@ -197,9 +198,9 @@ export default function Profile() {
 
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         {isSelf && activity && (
-          <section className="mb-10 rounded-2xl border border-hairline bg-elevated p-6">
+          <section className="mb-10 rounded-lg border border-hairline bg-elevated p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="relative inline-block text-lg font-bold text-ink">
+              <h2 className="relative inline-block font-display text-lg font-semibold tracking-tight text-ink">
                 Activity
                 <DoodleUnderline className="-bottom-2" />
               </h2>
@@ -246,16 +247,16 @@ export default function Profile() {
                 body="Bookmark problems to revisit them later."
               />
             ) : (
-              <div className="divide-y divide-hairline overflow-hidden rounded-xl border border-hairline bg-elevated">
+              <div className="divide-y divide-hairline overflow-hidden rounded-lg border border-hairline bg-elevated">
                 {saved.map((p) => (
                   <Link
                     key={p.id}
                     to={`/problems/${p.slug}`}
-                    className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-white/[0.04]"
+                    className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-ink/[0.04]"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-3">
-                        <span className="truncate font-semibold text-ink">
+                        <span className="truncate font-display text-base font-semibold tracking-tight text-ink">
                           {p.title}
                         </span>
                         <DifficultyBadge difficulty={p.difficulty} />
@@ -280,7 +281,7 @@ export default function Profile() {
 
 function EmptyTab({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-hairline-strong bg-elevated px-6 py-16 text-center">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-hairline-strong bg-elevated px-6 py-16 text-center">
       <span className="relative inline-block text-lg font-semibold text-ink-muted">
         {title}
         <DoodleUnderline className="-bottom-2 text-accent/40" />

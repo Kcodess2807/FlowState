@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { IconSearch } from "@tabler/icons-react";
+import { Search01Icon } from "hugeicons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
 import { ProblemRow } from "@/components/shared/ProblemRow";
@@ -46,10 +46,10 @@ export default function Problems() {
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         <FadeIn>
-          <span className="text-sm font-semibold uppercase tracking-widest text-accent">
+          <span className="mono text-xs uppercase tracking-[0.2em] text-accent">
             Practice
           </span>
-          <h1 className="relative mt-2 inline-block text-4xl font-extrabold tracking-tight text-ink">
+          <h1 className="relative mt-2 inline-block font-display text-5xl font-semibold tracking-tight text-ink">
             Problems
             <DoodleUnderline className="-bottom-3" />
           </h1>
@@ -60,10 +60,10 @@ export default function Problems() {
 
         {/* Filter bar */}
         <FadeIn delay={0.05}>
-          <div className="mt-8 space-y-4 rounded-xl border border-hairline bg-elevated p-4">
+          <div className="mt-8 space-y-4 rounded-lg border border-hairline bg-elevated p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="relative flex-1">
-                <IconSearch
+                <Search01Icon
                   size={18}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"
                 />
@@ -83,7 +83,7 @@ export default function Problems() {
                       setDifficulty((cur) => (cur === d ? null : d))
                     }
                     className={cn(
-                      "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                      "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                       difficulty === d
                         ? "border-accent bg-accent/10 text-accent"
                         : "border-hairline text-ink-muted hover:border-accent/40",
@@ -96,7 +96,7 @@ export default function Problems() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
                 Tags
               </span>
               {ALL_TAGS.map((tag) => (
@@ -107,7 +107,7 @@ export default function Problems() {
                   className={cn(
                     "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
                     activeTag === tag
-                      ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                      ? "border-accent bg-accent/10 text-accent"
                       : "border-hairline text-ink-muted hover:border-accent/40",
                   )}
                 >
@@ -119,13 +119,13 @@ export default function Problems() {
         </FadeIn>
 
         {/* List */}
-        <div className="mt-6 overflow-hidden rounded-xl border border-hairline bg-elevated">
+        <div className="mt-6 overflow-hidden rounded-lg border border-hairline bg-elevated">
           {loading ? (
             <div className="divide-y divide-hairline">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="animate-pulse px-5 py-5">
-                  <div className="h-4 w-1/3 rounded bg-white/[0.05]" />
-                  <div className="mt-3 h-3 w-2/3 rounded bg-white/[0.05]" />
+                  <div className="h-4 w-1/3 rounded bg-ink/[0.06]" />
+                  <div className="mt-3 h-3 w-2/3 rounded bg-ink/[0.06]" />
                 </div>
               ))}
             </div>

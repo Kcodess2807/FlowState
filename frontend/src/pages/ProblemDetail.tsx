@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
-  IconAlertTriangle,
-  IconArrowLeft,
-  IconDeviceFloppy,
-  IconLoader2,
-  IconLock,
-  IconUsers,
-} from "@tabler/icons-react";
+  Alert01Icon,
+  ArrowLeft01Icon,
+  FloppyDiskIcon,
+  Loading03Icon,
+  SquareLock02Icon,
+  UserMultipleIcon,
+} from "hugeicons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export default function ProblemDetail() {
     return (
       <SiteLayout showFooter={false}>
         <div className="flex min-h-[70vh] items-center justify-center">
-          <IconLoader2 className="animate-spin text-accent" size={28} />
+          <Loading03Icon className="animate-spin text-accent" size={28} />
         </div>
       </SiteLayout>
     );
@@ -95,7 +95,9 @@ export default function ProblemDetail() {
     return (
       <SiteLayout>
         <div className="mx-auto max-w-md px-4 py-24 text-center">
-          <h1 className="text-2xl font-bold text-ink">Problem not found</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">
+            Problem not found
+          </h1>
           <p className="mt-2 text-ink-muted">
             We couldn't find a problem with that slug.
           </p>
@@ -113,7 +115,7 @@ export default function ProblemDetail() {
         <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/problems">
-              <IconArrowLeft size={16} />
+              <ArrowLeft01Icon size={16} />
               Problems
             </Link>
           </Button>
@@ -125,12 +127,12 @@ export default function ProblemDetail() {
           <div className="flex flex-wrap items-center gap-3">
             <DifficultyBadge difficulty={problem.difficulty} />
             <span className="inline-flex items-center gap-1.5 text-sm text-ink-faint">
-              <IconUsers size={15} />
+              <UserMultipleIcon size={15} />
               {formatCount(problem.solveCount)} solved
             </span>
           </div>
 
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ink">
+          <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-ink">
             {problem.title}
           </h1>
 
@@ -143,7 +145,7 @@ export default function ProblemDetail() {
           </div>
 
           <section className="mt-7">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-ink-faint">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
               Problem
             </h2>
             <p className="mt-2 leading-relaxed text-ink-muted">
@@ -152,7 +154,7 @@ export default function ProblemDetail() {
           </section>
 
           <section className="mt-7">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-ink-faint">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
               Constraints
             </h2>
             <ul className="mt-3 space-y-2">
@@ -169,7 +171,7 @@ export default function ProblemDetail() {
           </section>
 
           <section className="mt-7">
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-faint">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
               Hints
             </h2>
             <Accordion
@@ -189,13 +191,13 @@ export default function ProblemDetail() {
           <div className="relative flex min-h-0 flex-1 flex-col">
             {authLoading ? (
               <CanvasMessage>
-                <IconLoader2 className="animate-spin text-accent" size={26} />
+                <Loading03Icon className="animate-spin text-accent" size={26} />
               </CanvasMessage>
             ) : !isAuthenticated ? (
               <CanvasGate redirectFrom={location.pathname} />
             ) : canvasError ? (
               <CanvasMessage>
-                <IconAlertTriangle className="text-rose-500" size={26} />
+                <Alert01Icon className="text-rose-500" size={26} />
                 <p className="mt-3 font-semibold text-ink-muted">
                   Canvas unavailable
                 </p>
@@ -205,7 +207,7 @@ export default function ProblemDetail() {
               </CanvasMessage>
             ) : !canvasId ? (
               <CanvasMessage>
-                <IconLoader2 className="animate-spin text-accent" size={26} />
+                <Loading03Icon className="animate-spin text-accent" size={26} />
                 <p className="mt-3 text-sm text-ink-muted">Opening canvas…</p>
               </CanvasMessage>
             ) : (
@@ -215,13 +217,13 @@ export default function ProblemDetail() {
 
           <div className="flex items-center justify-between border-t border-hairline bg-surface/40 px-4 py-3">
             <span className="mono inline-flex items-center gap-1.5 text-xs text-ink-faint">
-              <IconDeviceFloppy size={16} className="text-accent" />
+              <FloppyDiskIcon size={16} className="text-accent" />
               Changes auto-save in real time
             </span>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting ? (
                 <>
-                  <IconLoader2 size={16} className="animate-spin" />
+                  <Loading03Icon size={16} className="animate-spin" />
                   Submitting…
                 </>
               ) : (
@@ -246,11 +248,11 @@ function CanvasMessage({ children }: { children: React.ReactNode }) {
 function CanvasGate({ redirectFrom }: { redirectFrom: string }) {
   return (
     <div className="surface-dots flex flex-1 items-center justify-center p-6">
-      <div className="max-w-sm rounded-2xl border border-hairline bg-elevated/90 p-8 text-center backdrop-blur">
-        <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent shadow-glow-sm">
-          <IconLock size={22} />
+      <div className="max-w-sm rounded-lg border border-hairline bg-elevated/90 p-8 text-center backdrop-blur">
+        <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
+          <SquareLock02Icon size={22} />
         </span>
-        <h3 className="mt-4 font-bold text-ink">
+        <h3 className="mt-4 font-display text-lg font-semibold tracking-tight text-ink">
           Sign in to use the live canvas
         </h3>
         <p className="mt-1.5 text-sm text-ink-muted">
