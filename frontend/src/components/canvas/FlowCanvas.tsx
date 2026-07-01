@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  IconArrowBackUp,
-  IconArrowForwardUp,
-  IconArrowUpRight,
-  IconCircle,
-  IconDownload,
-  IconMaximize,
-  IconMinus,
-  IconPhoto,
-  IconPlus,
-  IconPointer,
-  IconSearch,
-  IconSquare,
-  IconTrash,
-  IconTypography,
-} from "@tabler/icons-react";
+  ArrowTurnBackwardIcon,
+  ArrowTurnForwardIcon,
+  ArrowUpRight01Icon,
+  CircleIcon,
+  Download01Icon,
+  Maximize01Icon,
+  MinusSignIcon,
+  Image01Icon,
+  PlusSignIcon,
+  Cursor01Icon,
+  Search01Icon,
+  SquareIcon,
+  Delete02Icon,
+  TextFontIcon,
+} from "hugeicons-react";
 import { useCanvasSocket } from "@/hooks/useCanvasSocket";
 import { CANVAS_COLORS, colorForUser } from "@/types/canvas";
 import type { OperationType, Shape, ShapeType } from "@/types/canvas";
@@ -39,12 +39,12 @@ interface HistoryEntry {
 type DrawTool = "rect" | "ellipse" | "arrow" | "text";
 type Tool = "select" | DrawTool | "component";
 
-const TOOLS: { id: Tool; icon: typeof IconPointer; label: string }[] = [
-  { id: "select", icon: IconPointer, label: "Select / move" },
-  { id: "rect", icon: IconSquare, label: "Rectangle" },
-  { id: "ellipse", icon: IconCircle, label: "Ellipse" },
-  { id: "arrow", icon: IconArrowUpRight, label: "Arrow" },
-  { id: "text", icon: IconTypography, label: "Text" },
+const TOOLS: { id: Tool; icon: typeof Cursor01Icon; label: string }[] = [
+  { id: "select", icon: Cursor01Icon, label: "Select / move" },
+  { id: "rect", icon: SquareIcon, label: "Rectangle" },
+  { id: "ellipse", icon: CircleIcon, label: "Ellipse" },
+  { id: "arrow", icon: ArrowUpRight01Icon, label: "Arrow" },
+  { id: "text", icon: TextFontIcon, label: "Text" },
 ];
 
 const TOOL_SHAPE: Record<DrawTool, ShapeType> = {
@@ -192,7 +192,7 @@ function hitTest(
 const avatarUrl = (seed: string) =>
   `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(
     seed,
-  )}&backgroundColor=ccfbf1`;
+  )}&backgroundColor=e7e3fb`;
 
 export function FlowCanvas({ canvasId }: { canvasId: string }) {
   const socket = useCanvasSocket(canvasId);
@@ -782,7 +782,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
               "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
               tool === t.id
                 ? "bg-accent/10 text-accent ring-1 ring-accent/30"
-                : "text-ink-muted hover:bg-white/[0.06]",
+                : "text-ink-muted hover:bg-ink/[0.06]",
             )}
           >
             <t.icon size={18} />
@@ -800,8 +800,8 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
               aria-label={`Color ${c}`}
               onClick={() => setColor(c)}
               className={cn(
-                "h-5 w-5 rounded-full ring-offset-1 transition-transform hover:scale-110",
-                color === c ? "ring-2 ring-white/70" : "ring-1 ring-hairline",
+                "h-5 w-5 rounded-full ring-offset-1 ring-offset-elevated transition-transform hover:scale-110",
+                color === c ? "ring-2 ring-ink/50" : "ring-1 ring-hairline-strong",
               )}
               style={{ backgroundColor: c }}
             />
@@ -818,9 +818,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
           onClick={() => {
             if (selectedId) deleteShape(selectedId);
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-rose-500/10 hover:text-rose-500 disabled:opacity-40 disabled:hover:bg-transparent"
         >
-          <IconTrash size={18} />
+          <Delete02Icon size={18} />
         </button>
 
         <div className="mx-1 h-6 w-px bg-hairline" />
@@ -831,9 +831,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
           aria-label="Undo"
           disabled={undoStackRef.current.length === 0}
           onClick={undo}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
         >
-          <IconArrowBackUp size={18} />
+          <ArrowTurnBackwardIcon size={18} />
         </button>
         <button
           type="button"
@@ -841,9 +841,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
           aria-label="Redo"
           disabled={redoStackRef.current.length === 0}
           onClick={redo}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
         >
-          <IconArrowForwardUp size={18} />
+          <ArrowTurnForwardIcon size={18} />
         </button>
 
         <div className="mx-1 h-6 w-px bg-hairline" />
@@ -855,9 +855,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             aria-label="Export"
             disabled={shapes.length === 0}
             onClick={() => setExportOpen((o) => !o)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-white/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/[0.06] disabled:opacity-40 disabled:hover:bg-transparent"
           >
-            <IconDownload size={18} />
+            <Download01Icon size={18} />
           </button>
           {exportOpen && (
             <>
@@ -865,7 +865,7 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                 className="fixed inset-0 z-20"
                 onClick={() => setExportOpen(false)}
               />
-              <div className="absolute left-0 top-full z-30 mt-1 w-36 overflow-hidden rounded-lg border border-hairline bg-elevated p-1 shadow-glow-sm">
+              <div className="absolute left-0 top-full z-30 mt-1 w-36 overflow-hidden rounded-lg border border-hairline bg-elevated p-1 shadow-card">
                 <button
                   type="button"
                   onClick={() => {
@@ -874,9 +874,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                     );
                     setExportOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-ink hover:bg-white/[0.04]"
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-ink hover:bg-ink/[0.06]"
                 >
-                  <IconPhoto size={16} className="text-ink-faint" />
+                  <Image01Icon size={16} className="text-ink-faint" />
                   PNG image
                 </button>
                 <button
@@ -887,9 +887,9 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
                     );
                     setExportOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-ink hover:bg-white/[0.04]"
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-ink hover:bg-ink/[0.06]"
                 >
-                  <IconDownload size={16} className="text-ink-faint" />
+                  <Download01Icon size={16} className="text-ink-faint" />
                   SVG vector
                 </button>
               </div>
@@ -1044,10 +1044,10 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
         {/* Empty hint */}
         {rendered.length === 0 && !editing && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-            <p className="font-semibold text-ink-muted">
+            <p className="font-display text-lg font-semibold tracking-tight text-[#2b303a]">
               Your canvas is live — start designing
             </p>
-            <p className="max-w-xs text-sm text-ink-faint">
+            <p className="max-w-xs text-sm text-[#6b7280]">
               Drop system-design components from the left rail, then connect them
               with arrows. Everything syncs and persists in real time.
             </p>
@@ -1055,20 +1055,20 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
         )}
 
         {/* Zoom controls */}
-        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-0.5 rounded-lg border border-hairline bg-surface/80 p-1 backdrop-blur">
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-0.5 rounded-lg border border-hairline bg-elevated/90 p-1 shadow-card backdrop-blur">
           <button
             type="button"
             title="Zoom out"
             onClick={() => zoomFromCenter(1 / 1.2)}
-            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-white/[0.06]"
+            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-ink/[0.06]"
           >
-            <IconMinus size={16} />
+            <MinusSignIcon size={16} />
           </button>
           <button
             type="button"
             title="Reset zoom"
             onClick={() => setView({ x: 0, y: 0, scale: 1 })}
-            className="min-w-[3rem] rounded px-1 py-1 text-xs font-medium text-ink-muted hover:bg-white/[0.06]"
+            className="min-w-[3rem] rounded px-1 py-1 text-xs font-medium text-ink-muted hover:bg-ink/[0.06]"
           >
             {Math.round(view.scale * 100)}%
           </button>
@@ -1076,18 +1076,18 @@ export function FlowCanvas({ canvasId }: { canvasId: string }) {
             type="button"
             title="Zoom in"
             onClick={() => zoomFromCenter(1.2)}
-            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-white/[0.06]"
+            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-ink/[0.06]"
           >
-            <IconPlus size={16} />
+            <PlusSignIcon size={16} />
           </button>
           <div className="mx-0.5 h-5 w-px bg-hairline" />
           <button
             type="button"
             title="Fit to content"
             onClick={fitToContent}
-            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-white/[0.06]"
+            className="flex h-7 w-7 items-center justify-center rounded text-ink-muted hover:bg-ink/[0.06]"
           >
-            <IconMaximize size={16} />
+            <Maximize01Icon size={16} />
           </button>
         </div>
         </div>
@@ -1166,7 +1166,7 @@ function ShapeView({
               width={lw}
               height={20}
               rx={6}
-              fill="#12151B"
+              fill="#ffffff"
               stroke={shape.color}
               strokeOpacity={0.5}
             />
@@ -1177,7 +1177,8 @@ function ShapeView({
               dominantBaseline="middle"
               fontSize={12}
               fontWeight={600}
-              className="select-none fill-ink"
+              fill="#14181f"
+              className="select-none"
             >
               {label}
             </text>
@@ -1210,7 +1211,7 @@ function ShapeView({
           width={n.w}
           height={n.h}
           rx={12}
-          fill="#161A22"
+          fill="#ffffff"
           stroke={shape.color}
           strokeWidth={sw}
         />
@@ -1230,8 +1231,8 @@ function ShapeView({
           style={{ pointerEvents: "none" }}
         >
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-2 text-center">
-            <Icon size={26} color={shape.color} stroke={1.8} />
-            <span className="text-[11px] font-semibold leading-tight text-ink">
+            <Icon size={26} color={shape.color} strokeWidth={1.8} />
+            <span className="text-[11px] font-semibold leading-tight text-[#14181f]">
               {shape.text}
             </span>
           </div>
@@ -1294,7 +1295,7 @@ function SelectionOverlay({
         width={w + 10}
         height={h + 10}
         fill="none"
-        stroke="#2dd4bf"
+        stroke="#5848d9"
         strokeWidth={1.5}
         strokeDasharray="5 4"
         rx={6}
@@ -1305,8 +1306,8 @@ function SelectionOverlay({
           y={handleY - 5}
           width={10}
           height={10}
-          fill="#0A0C10"
-          stroke="#2dd4bf"
+          fill="#ffffff"
+          stroke="#5848d9"
           strokeWidth={1.5}
           rx={2}
         />
@@ -1369,11 +1370,11 @@ function StencilRail({
   return (
     <div className="flex w-[100px] shrink-0 flex-col border-r border-hairline bg-elevated">
       <div className="sticky top-0 z-10 space-y-1.5 bg-elevated px-2 pb-1.5 pt-2">
-        <span className="block text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+        <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
           Components
         </span>
         <div className="relative">
-          <IconSearch
+          <Search01Icon
             size={13}
             className="absolute left-2 top-1/2 -translate-y-1/2 text-ink-faint"
           />
@@ -1401,10 +1402,10 @@ function StencilRail({
                 "flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors",
                 active
                   ? "border-accent/40 bg-accent/10"
-                  : "border-transparent hover:bg-white/[0.04]",
+                  : "border-transparent hover:bg-ink/[0.06]",
               )}
             >
-              <Icon size={20} color={s.color} stroke={1.8} />
+              <Icon size={20} color={s.color} strokeWidth={1.8} />
               <span className="text-[10px] font-medium leading-tight text-ink-muted">
                 {s.label}
               </span>

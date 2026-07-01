@@ -1,12 +1,13 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
-  IconLayoutDashboard,
-  IconLogout,
-  IconMenu2,
-  IconX,
-} from "@tabler/icons-react";
+  DashboardSquare01Icon,
+  Logout01Icon,
+  Menu01Icon,
+  Cancel01Icon,
+} from "hugeicons-react";
 import { useState } from "react";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
@@ -28,7 +29,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-hairline bg-surface/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-hairline bg-bg/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-8">
           <Logo />
@@ -39,9 +40,9 @@ export function Navbar() {
                 to={link.to}
                 className={({ isActive }) =>
                   cn(
-                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "relative rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? "text-accent"
+                      ? "text-ink after:absolute after:inset-x-3 after:-bottom-px after:h-px after:bg-accent"
                       : "text-ink-muted hover:text-ink",
                   )
                 }
@@ -52,25 +53,26 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           {isAuthenticated && user ? (
             <>
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/dashboard">
-                  <IconLayoutDashboard size={18} />
+                  <DashboardSquare01Icon size={18} />
                   Dashboard
                 </Link>
               </Button>
               <Link to={`/profile/${usernameFromName(user.display_name)}`}>
                 <Avatar
-                  src={`https://api.dicebear.com/7.x/notionists/svg?seed=${user.email}&backgroundColor=ccfbf1`}
+                  src={`https://api.dicebear.com/7.x/notionists/svg?seed=${user.email}&backgroundColor=e7e3fb`}
                   alt={user.display_name}
                   size={34}
                   className="hover-lift"
                 />
               </Link>
               <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Log out">
-                <IconLogout size={18} />
+                <Logout01Icon size={18} />
               </Button>
             </>
           ) : (
@@ -85,14 +87,17 @@ export function Navbar() {
           )}
         </div>
 
-        <button
-          type="button"
-          className="rounded-md p-2 text-ink-muted hover:bg-white/[0.05] md:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Toggle menu"
-        >
-          {open ? <IconX size={22} /> : <IconMenu2 size={22} />}
-        </button>
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <button
+            type="button"
+            className="rounded-md p-2 text-ink-muted hover:bg-ink/[0.06]"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {open ? <Cancel01Icon size={22} /> : <Menu01Icon size={22} />}
+          </button>
+        </div>
       </nav>
 
       {open && (
@@ -103,7 +108,7 @@ export function Navbar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setOpen(false)}
-                className="rounded-md px-3 py-2 text-sm font-medium text-ink-muted hover:bg-white/[0.05]"
+                className="rounded-md px-3 py-2 text-sm font-medium text-ink-muted hover:bg-ink/[0.06]"
               >
                 {link.label}
               </NavLink>

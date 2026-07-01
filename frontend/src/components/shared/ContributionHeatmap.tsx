@@ -11,7 +11,14 @@ const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
-const LEVELS = ["#1b212b", "#173f3b", "#1c6f66", "#23a596", "#2dd4bf"];
+// Theme-aware contribution scale: empty → increasingly saturated clay accent.
+const LEVELS = [
+  "rgb(var(--ink) / 0.08)",
+  "rgb(var(--accent) / 0.28)",
+  "rgb(var(--accent) / 0.5)",
+  "rgb(var(--accent) / 0.74)",
+  "rgb(var(--accent))",
+];
 
 function parseDate(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);

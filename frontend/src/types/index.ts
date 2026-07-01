@@ -21,6 +21,7 @@ export interface ProblemListItem {
   difficulty: Difficulty;
   is_published: boolean;
   topics: Topic[];
+  solveCount: number;
 }
 
 /** Full problem returned by the detail endpoint. */
@@ -29,6 +30,9 @@ export interface Problem extends ProblemListItem {
   rubric: RubricCriterion[];
   reference_solution: string | null;
   created_at: string;
+  tags: string[];
+  constraints: string[];
+  hints: string[];
 }
 
 export interface Author {

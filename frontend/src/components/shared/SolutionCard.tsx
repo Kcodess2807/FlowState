@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { IconEye, IconHeart } from "@tabler/icons-react";
+import { ViewIcon, FavouriteIcon } from "hugeicons-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CanvasThumb } from "./CanvasThumb";
@@ -10,7 +10,7 @@ import { formatCount } from "@/lib/utils";
 
 export function SolutionCard({ solution }: { solution: Solution }) {
   return (
-    <Spotlight className="group h-full overflow-hidden border border-hairline bg-elevated">
+    <Spotlight className="group h-full overflow-hidden border border-hairline bg-elevated shadow-card">
       <div className="relative overflow-hidden rounded-t-2xl">
         <CanvasThumb className="rounded-none" />
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/0 opacity-0 backdrop-blur-[1px] transition-all duration-200 group-hover:bg-slate-900/40 group-hover:opacity-100">
@@ -23,7 +23,7 @@ export function SolutionCard({ solution }: { solution: Solution }) {
       <div className="relative p-4">
         <Link
           to={`/problems/${solution.problemSlug}`}
-          className="line-clamp-1 font-semibold text-ink hover:text-accent"
+          className="line-clamp-1 font-display text-base font-semibold tracking-tight text-ink hover:text-accent"
         >
           {solution.problemTitle}
         </Link>
@@ -45,11 +45,11 @@ export function SolutionCard({ solution }: { solution: Solution }) {
 
           <div className="flex items-center gap-3 text-sm text-ink-faint">
             <span className="inline-flex items-center gap-1">
-              <IconHeart size={15} className="text-rose-400" />
+              <FavouriteIcon size={15} className="text-rose-500" />
               {formatCount(solution.likeCount)}
             </span>
             <span className="inline-flex items-center gap-1">
-              <IconEye size={15} />
+              <ViewIcon size={15} />
               {formatCount(solution.viewCount)}
             </span>
           </div>
@@ -57,7 +57,7 @@ export function SolutionCard({ solution }: { solution: Solution }) {
 
         <div className="mt-3 flex flex-wrap gap-1.5">
           {solution.tags.map((tag) => (
-            <Badge key={tag} variant="cyan">
+            <Badge key={tag} variant="neutral">
               {tag}
             </Badge>
           ))}

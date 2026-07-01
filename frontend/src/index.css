@@ -3,8 +3,46 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Nocturne palette. Colors are stored as space-separated RGB triples so
+   * Tailwind's `<alpha-value>` opacity modifiers keep working (see tailwind.config).
+   * Light = cool graphite ink on a cool off-white. Dark = cool off-white on a
+   * deep blue-charcoal. Near-monochrome: a single restrained iris accent.
+   */
   :root {
+    color-scheme: light;
+
+    --bg: 244 245 247; /* cool off-white */
+    --elevated: 255 255 255; /* raised surface */
+    --surface: 232 235 240; /* sunken panel */
+    --ink: 20 24 31; /* cool near-black */
+    --ink-muted: 90 99 112;
+    --ink-faint: 140 149 161;
+
+    --accent: 88 72 217; /* iris */
+    --accent-soft: 120 108 230;
+    --accent-contrast: 255 255 255; /* text on accent */
+
+    --warn: 180 95 20;
+    --shadow: 17 24 39; /* cool slate shadow tint */
+  }
+
+  .dark {
     color-scheme: dark;
+
+    --bg: 14 16 21; /* deep blue-charcoal */
+    --elevated: 22 26 33;
+    --surface: 31 37 47;
+    --ink: 229 232 239; /* cool off-white */
+    --ink-muted: 156 165 180;
+    --ink-faint: 101 111 127;
+
+    --accent: 167 153 255; /* soft lavender iris for dark bg */
+    --accent-soft: 120 104 220;
+    --accent-contrast: 14 16 21; /* dark text on light accent */
+
+    --warn: 214 170 92;
+    --shadow: 0 0 0;
   }
 
   html {
@@ -17,30 +55,49 @@
   }
 
   ::selection {
-    @apply bg-accent/25 text-ink;
+    @apply bg-accent/20 text-ink;
   }
 
-  /* Hairline-first: default borders are subtle white, never heavy. */
+  /* Hairline-first: default borders are a subtle ink-on-paper rule. */
   * {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgb(var(--ink) / 0.1);
+  }
+
+  /* Editorial headings: serif display with tight optical spacing. */
+  .font-display {
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer components {
+  /*
+   * The canvas drawing surface is always warm "paper" regardless of theme, so
+   * hand-drawn nodes/arrows stay legible while the surrounding chrome themes.
+   */
   .surface-dots {
-    @apply bg-dot-grid bg-dots;
-    background-color: #12151b;
+    background-color: #f7f8fa;
+    background-image: radial-gradient(
+      circle,
+      rgba(20, 24, 31, 0.1) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
   }
 
   .surface-lines {
-    @apply bg-line-grid bg-lines;
+    background-color: #f7f8fa;
+    background-image:
+      linear-gradient(rgba(20, 24, 31, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 24, 31, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 
-  /* Blueprint grid that fades toward the edges. */
+  /* Faint engineering grid that fades toward the edges (decorative only). */
   .blueprint {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+      linear-gradient(rgb(var(--ink) / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--ink) / 0.05) 1px, transparent 1px);
     background-size: 44px 44px;
     -webkit-mask-image: radial-gradient(
       120% 100% at 50% 0%,
@@ -50,18 +107,13 @@
     mask-image: radial-gradient(120% 100% at 50% 0%, #000 35%, transparent 85%);
   }
 
-  .text-gradient {
-    @apply bg-gradient-to-r from-ink via-ink to-accent bg-clip-text text-transparent;
-  }
-
   .glass {
-    @apply border border-hairline bg-surface/70 backdrop-blur-xl;
+    @apply border border-hairline bg-elevated/70 backdrop-blur-xl;
   }
 
   /* Mono technical detail treatment. */
   .mono {
     @apply font-mono tracking-tight;
-    font-feature-settings: "ss01";
   }
 
   .hover-lift {
@@ -70,57 +122,30 @@
   .hover-lift:hover {
     @apply -translate-y-0.5;
   }
-
-  /* Cursor spotlight border (used on a few cards). */
-  .spotlight {
-    position: relative;
-    isolation: isolate;
-  }
-  .spotlight::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: radial-gradient(
-      220px circle at var(--mx, 50%) var(--my, 50%),
-      rgba(45, 212, 191, 0.5),
-      transparent 60%
-    );
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    z-index: 1;
-  }
-  .spotlight:hover::before {
-    opacity: 1;
-  }
 }
 
 @layer utilities {
-  /* Film grain overlay. */
+  /* Subtle paper grain overlay (grayscale texture, no color). */
   .noise {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   }
 }
 
-/* Dark, thin scrollbars. */
+/* Thin, theme-aware scrollbars. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-color: rgb(var(--ink) / 0.18) transparent;
 }
 *::-webkit-scrollbar {
   width: 9px;
   height: 9px;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgb(var(--ink) / 0.16);
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgb(var(--ink) / 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {

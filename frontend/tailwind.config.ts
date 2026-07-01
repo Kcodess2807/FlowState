@@ -1,64 +1,65 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Color tokens resolve to CSS variables that hold space-separated RGB triples
+ * (e.g. `--ink: 32 28 22`). Wrapping them in `rgb(... / <alpha-value>)` keeps
+ * Tailwind opacity modifiers (e.g. `bg-accent/10`, `text-ink-muted`) working
+ * while letting `.dark` swap the whole palette by redefining the variables.
+ */
+const withAlpha = (v: string) => `rgb(var(${v}) / <alpha-value>)`;
+
 export default {
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Geist", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        // Nocturne: architectural grotesk display, clean sans body, plex mono.
+        display: ["Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: [
-          "Geist Mono",
-          "JetBrains Mono",
+          "IBM Plex Mono",
           "ui-monospace",
           "SFMono-Regular",
           "monospace",
         ],
       },
       colors: {
-        // Dark, blueprint-in-the-dark palette.
-        bg: "#0A0C10",
-        elevated: "#12151B",
-        surface: "#161A22",
-        hairline: "rgba(255,255,255,0.08)",
-        "hairline-strong": "rgba(255,255,255,0.14)",
+        bg: withAlpha("--bg"),
+        elevated: withAlpha("--elevated"),
+        surface: withAlpha("--surface"),
+        hairline: "rgb(var(--ink) / 0.10)",
+        "hairline-strong": "rgb(var(--ink) / 0.18)",
         ink: {
-          DEFAULT: "#EDEFF3",
-          muted: "#9BA3B4",
-          faint: "#5B6373",
+          DEFAULT: withAlpha("--ink"),
+          muted: withAlpha("--ink-muted"),
+          faint: withAlpha("--ink-faint"),
         },
         accent: {
-          DEFAULT: "#2DD4BF",
-          cyan: "#38BDF8",
-          glow: "rgba(45,212,191,0.35)",
+          DEFAULT: withAlpha("--accent"),
+          soft: withAlpha("--accent-soft"),
+          contrast: withAlpha("--accent-contrast"),
         },
-        warn: "#F4A338",
-        // Kept teal scale for fine-grained accent shades.
-        brand: {
-          50: "#f0fdfa",
-          100: "#ccfbf1",
-          200: "#99f6e4",
-          300: "#5eead4",
-          400: "#2dd4bf",
-          500: "#14b8a6",
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
-        },
+        warn: withAlpha("--warn"),
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(45,212,191,0.18), 0 8px 40px -8px rgba(45,212,191,0.35)",
-        "glow-sm": "0 0 24px -6px rgba(45,212,191,0.45)",
-        hairline: "0 0 0 1px rgba(255,255,255,0.08)",
-        panel: "0 1px 0 0 rgba(255,255,255,0.04) inset, 0 20px 50px -24px rgba(0,0,0,0.8)",
+        // Soft, low, paper-like shadows — no glow.
+        card: "0 1px 2px rgb(var(--shadow) / 0.05), 0 1px 1px rgb(var(--shadow) / 0.04)",
+        "card-lg":
+          "0 1px 2px rgb(var(--shadow) / 0.04), 0 12px 28px -16px rgb(var(--shadow) / 0.22)",
+        hairline: "0 0 0 1px rgb(var(--ink) / 0.10)",
+        panel:
+          "0 1px 0 0 rgb(var(--elevated) / 0.6) inset, 0 22px 48px -30px rgb(var(--shadow) / 0.30)",
+        // Back-compat aliases for former glow names → now subtle, glow-free.
+        glow: "0 1px 2px rgb(var(--shadow) / 0.05), 0 12px 28px -16px rgb(var(--shadow) / 0.22)",
+        "glow-sm":
+          "0 1px 2px rgb(var(--shadow) / 0.05), 0 1px 1px rgb(var(--shadow) / 0.04)",
       },
       backgroundImage: {
         "dot-grid":
-          "radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1px)",
+          "radial-gradient(circle, rgb(var(--ink) / 0.10) 1px, transparent 1px)",
         "line-grid":
-          "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-        "accent-glow":
-          "radial-gradient(50% 50% at 50% 50%, rgba(45,212,191,0.22) 0%, transparent 70%)",
+          "linear-gradient(rgb(var(--ink) / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--ink) / 0.05) 1px, transparent 1px)",
       },
       backgroundSize: {
         dots: "22px 22px",
@@ -86,10 +87,6 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
         },
-        "glow-pulse": {
-          "0%, 100%": { opacity: "0.6" },
-          "50%": { opacity: "1" },
-        },
       },
       animation: {
         "fade-in-up": "fade-in-up 0.5s ease-out both",
@@ -98,7 +95,6 @@ export default {
         dash: "dash 1s linear infinite",
         float: "float 6s ease-in-out infinite",
         marquee: "marquee 30s linear infinite",
-        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
       },
     },
   },

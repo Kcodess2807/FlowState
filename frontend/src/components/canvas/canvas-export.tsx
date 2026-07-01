@@ -65,7 +65,7 @@ function shapeToSvg(s: Shape, index: Map<string, Shape>): string {
     return [
       line,
       `<rect x="${mx - lw / 2}" y="${my - 10}" width="${lw}" height="20" rx="6" fill="#ffffff" stroke="${s.color}" stroke-opacity="0.4"/>`,
-      `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#334155">${esc(label)}</text>`,
+      `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#14181f">${esc(label)}</text>`,
     ].join("");
   }
   if (s.type === "rect") {
@@ -83,7 +83,7 @@ function shapeToSvg(s: Shape, index: Map<string, Shape>): string {
   const n = normalize(s);
   const stencil = stencilFor(s.variant);
   const icon = renderToStaticMarkup(
-    createElement(stencil.icon, { size: 26, color: s.color, stroke: 1.8 }),
+    createElement(stencil.icon, { size: 26, color: s.color, strokeWidth: 1.8 }),
   );
   const cx = n.x + n.w / 2;
   const iconX = cx - 13;
@@ -93,7 +93,7 @@ function shapeToSvg(s: Shape, index: Map<string, Shape>): string {
     `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="12" fill="#ffffff" stroke="${s.color}" stroke-width="2.5"/>`,
     `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="12" fill="${s.color}" fill-opacity="0.06"/>`,
     `<g transform="translate(${iconX},${iconY})">${icon}</g>`,
-    `<text x="${cx}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#334155">${esc(s.text ?? "")}</text>`,
+    `<text x="${cx}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#14181f">${esc(s.text ?? "")}</text>`,
   ].join("");
 }
 

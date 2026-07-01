@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { IconAlertCircle, IconLoader2 } from "@tabler/icons-react";
+import { AlertCircleIcon, Loading03Icon } from "hugeicons-react";
 import { Logo } from "@/components/shared/Logo";
-import { DotGrid } from "@/components/shared/DotGrid";
+import { AuroraBackground } from "@/components/shared/AuroraBackground";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,16 +44,16 @@ export default function Login() {
   };
 
   return (
-    <DotGrid className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-accent/[0.06] to-transparent" />
+    <div className="relative flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+      <AuroraBackground />
       <div className="relative w-full max-w-md">
         <div className="mb-6 flex justify-center">
           <Logo />
         </div>
 
-        <div className="rounded-2xl border border-hairline bg-elevated p-8">
+        <div className="rounded-lg border border-hairline bg-elevated p-8 shadow-card-lg">
           <div className="text-center">
-            <h1 className="relative inline-block text-xl font-extrabold tracking-tight text-ink">
+            <h1 className="relative inline-block font-display text-2xl font-semibold tracking-tight text-ink">
               {mode === "login" ? "Welcome back" : "Create your account"}
               <DoodleUnderline className="-bottom-2" />
             </h1>
@@ -63,8 +63,8 @@ export default function Login() {
           </div>
 
           {error && (
-            <div className="mt-6 flex items-start gap-2 rounded-lg border border-rose-400/25 bg-rose-400/10 px-3 py-2.5 text-sm text-rose-300">
-              <IconAlertCircle size={18} className="mt-px shrink-0" />
+            <div className="mt-6 flex items-start gap-2 rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-sm text-rose-700 dark:text-rose-300">
+              <AlertCircleIcon size={18} className="mt-px shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -108,7 +108,7 @@ export default function Login() {
             <Button type="submit" size="lg" className="w-full" disabled={submitting}>
               {submitting ? (
                 <>
-                  <IconLoader2 size={18} className="animate-spin" />
+                  <Loading03Icon size={18} className="animate-spin" />
                   Please wait…
                 </>
               ) : mode === "login" ? (
@@ -151,7 +151,7 @@ export default function Login() {
           </Link>
         </p>
       </div>
-    </DotGrid>
+    </div>
   );
 }
 

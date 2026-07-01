@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import { IconSearch } from "@tabler/icons-react";
+import { Search01Icon } from "hugeicons-react";
 import { SiteLayout } from "@/components/shared/SiteLayout";
 import { DoodleUnderline } from "@/components/shared/DoodleUnderline";
 import { ProblemRow } from "@/components/shared/ProblemRow";
 import { Input } from "@/components/ui/input";
 import { FadeIn } from "@/components/shared/FadeIn";
-import { getProblems, getTopics } from "@/lib/api";
-import type { Difficulty, ProblemListItem, Topic } from "@/types";
+import { getProblems } from "@/lib/api";
+import type { Difficulty, ProblemListItem, Problem } from "@/types";
 import { cn } from "@/lib/utils";
+import { ALL_TAGS } from "@/lib/mock-data";
 
 const DIFFICULTIES: { label: string; value: Difficulty }[] = [
   { label: "Easy", value: "easy" },
@@ -17,17 +18,10 @@ const DIFFICULTIES: { label: string; value: Difficulty }[] = [
 
 export default function Problems() {
   const [problems, setProblems] = useState<ProblemListItem[]>([]);
-  const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
-  const [activeTopic, setActiveTopic] = useState<string | null>(null);
-
-  useEffect(() => {
-    getTopics()
-      .then(setTopics)
-      .catch(() => setTopics([]));
-  }, []);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   // Server-side filtering; search is debounced so we don't refetch per keystroke.
   useEffect(() => {
@@ -35,7 +29,7 @@ export default function Problems() {
     const handle = setTimeout(() => {
       getProblems({
         difficulty: difficulty ?? undefined,
-        topic: activeTopic ?? undefined,
+        topic: activeTag ?? undefined,
         search: search.trim() || undefined,
       })
         .then((p) => {
@@ -48,7 +42,7 @@ export default function Problems() {
         });
     }, 250);
     return () => clearTimeout(handle);
-  }, [difficulty, activeTopic, search]);
+  }, [difficulty, activeTag, search]);
 
   return (
     <SiteLayout>
@@ -57,7 +51,7 @@ export default function Problems() {
           <span className="mono text-xs uppercase tracking-[0.2em] text-accent">
             Practice
           </span>
-          <h1 className="relative mt-3 inline-block text-4xl font-bold tracking-tight text-ink">
+          <h1 className="relative mt-2 inline-block font-display text-5xl font-semibold tracking-tight text-ink">
             Problems
             <DoodleUnderline className="-bottom-3" />
           </h1>
@@ -68,10 +62,10 @@ export default function Problems() {
 
         {/* Filter bar */}
         <FadeIn delay={0.05}>
-          <div className="mt-8 space-y-4 rounded-xl border border-hairline bg-elevated p-4">
+          <div className="mt-8 space-y-4 rounded-lg border border-hairline bg-elevated p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="relative flex-1">
-                <IconSearch
+                <Search01Icon
                   size={18}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"
                 />
@@ -91,10 +85,10 @@ export default function Problems() {
                       setDifficulty((cur) => (cur === d.value ? null : d.value))
                     }
                     className={cn(
-                      "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                      "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                       difficulty === d.value
-                        ? "border-accent/40 bg-accent/10 text-accent"
-                        : "border-hairline text-ink-muted hover:border-hairline-strong",
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-hairline text-ink-muted hover:border-accent/40",
                     )}
                   >
                     {d.label}
@@ -103,41 +97,39 @@ export default function Problems() {
               </div>
             </div>
 
-            {topics.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="mono text-xs uppercase tracking-wide text-ink-faint">
-                  Topics
-                </span>
-                {topics.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() =>
-                      setActiveTopic((cur) => (cur === t.slug ? null : t.slug))
-                    }
-                    className={cn(
-                      "mono rounded-full border px-2.5 py-0.5 text-xs transition-colors",
-                      activeTopic === t.slug
-                        ? "border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan"
-                        : "border-hairline text-ink-muted hover:border-hairline-strong",
-                    )}
-                  >
-                    {t.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                Tags
+              </span>
+              {ALL_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() =>
+                    setActiveTag((cur) => (cur === tag ? null : tag))
+                  }
+                  className={cn(
+                    "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
+                    activeTag === tag
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-hairline text-ink-muted hover:border-accent/40",
+                  )}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
         </FadeIn>
 
         {/* List */}
-        <div className="mt-6 overflow-hidden rounded-xl border border-hairline bg-elevated">
+        <div className="mt-6 overflow-hidden rounded-lg border border-hairline bg-elevated">
           {loading ? (
             <div className="divide-y divide-hairline">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="animate-pulse px-5 py-5">
-                  <div className="h-4 w-1/3 rounded bg-white/[0.05]" />
-                  <div className="mt-3 h-3 w-2/3 rounded bg-white/[0.05]" />
+                  <div className="h-4 w-1/3 rounded bg-ink/[0.06]" />
+                  <div className="mt-3 h-3 w-2/3 rounded bg-ink/[0.06]" />
                 </div>
               ))}
             </div>
@@ -146,7 +138,7 @@ export default function Problems() {
           ) : (
             <div className="divide-y divide-hairline">
               {problems.map((p) => (
-                <ProblemRow key={p.id} problem={p} />
+                <ProblemRow key={p.id} problem={p as Problem} />
               ))}
             </div>
           )}
@@ -165,7 +157,11 @@ export default function Problems() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <svg viewBox="0 0 120 80" className="h-20 w-28 text-accent/40" fill="none">
+      <svg
+        viewBox="0 0 120 80"
+        className="h-20 w-28 text-accent/40"
+        fill="none"
+      >
         <rect
           x="6"
           y="10"

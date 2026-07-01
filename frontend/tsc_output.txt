@@ -1,0 +1,25 @@
+src/pages/Dashboard.tsx(162,30): error TS2739: Type 'ProblemListItem' is missing the following properties from type 'Problem': description, rubric, reference_solution, created_at
+src/pages/ProblemDetail.tsx(146,27): error TS2339: Property 'map' does not exist on type 'number'.
+src/pages/ProblemDetail.tsx(146,32): error TS7006: Parameter 'tag' implicitly has an 'any' type.
+src/pages/ProblemDetail.tsx(171,36): error TS2339: Property 'map' does not exist on type 'number'.
+src/pages/ProblemDetail.tsx(171,41): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/pages/ProblemDetail.tsx(188,36): error TS2339: Property 'map' does not exist on type 'number'.
+src/pages/ProblemDetail.tsx(188,41): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/ProblemDetail.tsx(188,44): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/pages/Problems.tsx(1,21): error TS6133: 'useMemo' is declared but its value is never read.
+src/pages/Problems.tsx(21,10): error TS6133: 'topics' is declared but its value is never read.
+src/pages/Problems.tsx(25,23): error TS6133: 'setActiveTopic' is declared but its value is never read.
+src/pages/Problems.tsx(54,25): error TS6133: 'arg0' is declared but its value is never read.
+src/pages/Problems.tsx(100,23): error TS2367: This comparison appears to be unintentional because the types 'string | null' and '{ label: string; value: Difficulty; }' have no overlap.
+src/pages/Problems.tsx(122,21): error TS2552: Cannot find name 'activeTag'. Did you mean 'setActiveTag'?
+src/pages/Problems.tsx(150,40): error TS2739: Type 'ProblemListItem' is missing the following properties from type 'Problem': description, rubric, reference_solution, created_at
+src/types/index.ts(28,3): error TS2411: Property 'difficulty' of type 'Difficulty' is not assignable to 'string' index type 'number'.
+src/types/index.ts(28,3): error TS2411: Property 'id' of type 'string' is not assignable to 'string' index type 'number'.
+src/types/index.ts(28,3): error TS2411: Property 'is_published' of type 'boolean' is not assignable to 'string' index type 'number'.
+src/types/index.ts(28,3): error TS2411: Property 'slug' of type 'string' is not assignable to 'string' index type 'number'.
+src/types/index.ts(28,3): error TS2411: Property 'title' of type 'string' is not assignable to 'string' index type 'number'.
+src/types/index.ts(28,3): error TS2411: Property 'topics' of type 'Topic[]' is not assignable to 'string' index type 'number'.
+src/types/index.ts(29,3): error TS2411: Property 'description' of type 'string' is not assignable to 'string' index type 'number'.
+src/types/index.ts(30,3): error TS2411: Property 'rubric' of type 'RubricCriterion[]' is not assignable to 'string' index type 'number'.
+src/types/index.ts(31,3): error TS2411: Property 'reference_solution' of type 'string | null' is not assignable to 'string' index type 'number'.
+src/types/index.ts(32,3): error TS2411: Property 'created_at' of type 'string' is not assignable to 'string' index type 'number'.

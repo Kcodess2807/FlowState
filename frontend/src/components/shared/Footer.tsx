@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { IconBrandGithub } from "@tabler/icons-react";
+import { Github01Icon } from "hugeicons-react";
 import { Logo } from "./Logo";
 
 export function Footer() {
@@ -25,7 +25,7 @@ export function Footer() {
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 hover:text-accent"
           >
-            <IconBrandGithub size={18} />
+            <Github01Icon size={18} />
             GitHub
           </a>
         </div>
